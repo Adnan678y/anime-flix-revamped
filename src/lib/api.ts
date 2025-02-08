@@ -1,5 +1,5 @@
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'https://api-flax-five-98.vercel.app';
 
 export const api = {
   getHome: async () => {
