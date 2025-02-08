@@ -25,7 +25,7 @@ export const Hero = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full h-[70vh] bg-netflix-dark animate-pulse" />
+      <div className="w-full h-[80vh] bg-netflix-dark animate-pulse" />
     );
   }
 
@@ -36,33 +36,38 @@ export const Hero = () => {
   const currentAnime = slideshow.items[currentSlide];
 
   return (
-    <div className="relative w-full h-[70vh] overflow-hidden">
+    <div className="relative w-full h-[80vh] overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 scale-105"
         style={{ backgroundImage: `url(${currentAnime.img})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-netflix-black via-netflix-black/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-netflix-black via-netflix-black/70 to-transparent" />
       </div>
       
-      <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-        <h1 className="text-4xl md:text-6xl font-bold mb-4">{currentAnime.name}</h1>
+      <div className="absolute bottom-0 left-0 right-0 p-12 text-white">
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
+          {currentAnime.name}
+        </h1>
         <Link
           to={`/anime/${currentAnime.ID}`}
-          className="inline-flex items-center px-6 py-3 bg-netflix-red text-white rounded hover:bg-red-700 transition-colors"
+          className="inline-flex items-center px-8 py-4 bg-netflix-red text-white rounded-lg hover:bg-red-700 transition-colors duration-300 text-lg font-semibold shadow-lg hover:shadow-red-500/20"
         >
-          <Play className="mr-2 h-5 w-5" />
+          <Play className="mr-2 h-6 w-6" />
           Watch Now
         </Link>
       </div>
 
-      <div className="absolute bottom-4 right-4 flex space-x-2">
+      <div className="absolute bottom-8 right-8 flex space-x-3">
         {slideshow.items.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
-            className={`w-3 h-3 rounded-full transition-colors ${
-              index === currentSlide ? 'bg-netflix-red' : 'bg-gray-400'
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentSlide 
+                ? 'bg-netflix-red w-6' 
+                : 'bg-gray-400 hover:bg-gray-300'
             }`}
+            aria-label={`Go to slide ${index + 1}`}
           />
         ))}
       </div>

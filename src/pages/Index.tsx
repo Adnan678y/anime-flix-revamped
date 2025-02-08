@@ -12,20 +12,22 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen bg-netflix-black">
+    <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">
       <Navbar />
       <Hero />
       <div className="container mx-auto px-4 py-8">
-        <AnimeGrid
-          title="Popular Anime"
-          items={homeData?.Popular?.items || []}
-          isLoading={isLoading}
-        />
-        <AnimeGrid
-          title="New Releases"
-          items={homeData?.["New release"]?.items || []}
-          isLoading={isLoading}
-        />
+        <div className="space-y-12">
+          <AnimeGrid
+            title="Popular Anime"
+            items={homeData?.Popular?.items || []}
+            isLoading={isLoading}
+          />
+          <AnimeGrid
+            title="New Releases"
+            items={homeData?.["New release"]?.items || []}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
     </div>
   );
