@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
-import { Play } from 'lucide-react';
+import { Play, Star } from 'lucide-react';
 
 export const Hero = () => {
   const { data: slideshow, isLoading } = useQuery({
@@ -38,23 +38,35 @@ export const Hero = () => {
   return (
     <div className="relative w-full h-[80vh] overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-700 scale-105"
+        className="absolute inset-0 bg-cover bg-center transition-all duration-1000 scale-105"
         style={{ backgroundImage: `url(${currentAnime.img})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-netflix-black via-netflix-black/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-netflix-black via-netflix-black/80 to-transparent" />
       </div>
       
       <div className="absolute bottom-0 left-0 right-0 p-12 text-white">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
-          {currentAnime.name}
-        </h1>
-        <Link
-          to={`/anime/${currentAnime.ID}`}
-          className="inline-flex items-center px-8 py-4 bg-netflix-red text-white rounded-lg hover:bg-red-700 transition-colors duration-300 text-lg font-semibold shadow-lg hover:shadow-red-500/20"
-        >
-          <Play className="mr-2 h-6 w-6" />
-          Watch Now
-        </Link>
+        <div className="container mx-auto">
+          <div className="max-w-2xl space-y-6">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
+              {currentAnime.name}
+            </h1>
+            <div className="flex items-center space-x-4 mb-6 animate-fade-in">
+              <div className="flex items-center">
+                <Star className="w-5 h-5 text-yellow-400" fill="currentColor" />
+                <span className="ml-2 text-lg">Top Rated</span>
+              </div>
+              <span className="text-netflix-red font-semibold">HD</span>
+              <span className="text-gray-300">Sub | Dub</span>
+            </div>
+            <Link
+              to={`/anime/${currentAnime.ID}`}
+              className="inline-flex items-center px-8 py-4 bg-netflix-red text-white rounded-lg hover:bg-red-700 transition-all duration-300 text-lg font-semibold shadow-lg hover:shadow-red-500/20 transform hover:scale-105 animate-fade-in"
+            >
+              <Play className="mr-2 h-6 w-6" />
+              Watch Now
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="absolute bottom-8 right-8 flex space-x-3">
