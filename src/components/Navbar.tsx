@@ -1,11 +1,20 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, Menu, X } from 'lucide-react';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsOpen(false);
+    }
+  };
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-netflix-black/95 backdrop-blur-sm">
@@ -29,7 +38,7 @@ export const Navbar = () => {
               <Link to="/dubbed" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                 Dubbed
               </Link>
-              <div className="relative">
+              <form onSubmit={handleSearch} className="relative">
                 <input
                   type="text"
                   placeholder="Search anime..."
@@ -38,7 +47,7 @@ export const Navbar = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
+              </form>
             </div>
           </div>
 
@@ -76,7 +85,7 @@ export const Navbar = () => {
             >
               Dubbed
             </Link>
-            <div className="relative px-3 py-2">
+            <form onSubmit={handleSearch} className="relative px-3 py-2">
               <input
                 type="text"
                 placeholder="Search anime..."
@@ -85,7 +94,7 @@ export const Navbar = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Search className="absolute left-6 top-4.5 h-5 w-5 text-gray-400" />
-            </div>
+            </form>
           </div>
         </div>
       )}

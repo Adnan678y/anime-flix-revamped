@@ -6,6 +6,7 @@ import { Navbar } from '@/components/Navbar';
 import { Link } from 'react-router-dom';
 import { Play, Star, Clock, Calendar, Users, Info } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AnimeGrid } from '@/components/AnimeGrid';
 
 const AnimeDetails = () => {
   const isMobile = useIsMobile();
@@ -14,6 +15,12 @@ const AnimeDetails = () => {
     queryKey: ['anime', id],
     queryFn: () => api.getAnimeById(id!),
     enabled: !!id,
+  });
+
+  const { data: recommendations, isLoading: isLoadingRecommendations } = useQuery({
+    queryKey: ['recommendations', anime?.tag?.[0]],
+    queryFn: () => api.getRecommendations(anime?.tag?.[0] || ''),
+    enabled: !!anime?.tag?.[0],
   });
 
   if (isLoading) {
@@ -139,6 +146,17 @@ const AnimeDetails = () => {
               )}
             </div>
           </div>
+
+          {/* Recommendations Section */}
+          {recommendations?.items && recommendations.items.length > 0 && (
+            <div className="mt-16">
+              <AnimeGrid
+                title="More Like This"
+                items={recommendations.items}
+                isLoading={isLoadingRecommendations}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

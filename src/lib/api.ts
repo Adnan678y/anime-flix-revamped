@@ -31,4 +31,16 @@ export const api = {
     if (!response.ok) throw new Error('Failed to fetch slideshow');
     return response.json();
   },
+
+  searchAnime: async (query: string) => {
+    const response = await fetch(`${BASE_URL}/query?name=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error('Failed to search anime');
+    return response.json();
+  },
+
+  getRecommendations: async (tag: string) => {
+    const response = await fetch(`${BASE_URL}/query?tag=${encodeURIComponent(tag)}`);
+    if (!response.ok) throw new Error('Failed to fetch recommendations');
+    return response.json();
+  },
 };
