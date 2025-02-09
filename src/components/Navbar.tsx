@@ -13,6 +13,7 @@ export const Navbar = () => {
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsOpen(false);
+      setSearchQuery('');
     }
   };
 
@@ -42,7 +43,7 @@ export const Navbar = () => {
                 <input
                   type="text"
                   placeholder="Search anime..."
-                  className="bg-netflix-dark/50 text-white pl-10 pr-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                  className="w-64 bg-netflix-dark/50 text-white pl-10 pr-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-netflix-red"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -55,7 +56,7 @@ export const Navbar = () => {
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              className="text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white p-2"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -66,34 +67,39 @@ export const Navbar = () => {
       {/* Mobile menu */}
       {isOpen && (
         <div className="md:hidden bg-netflix-black/95 backdrop-blur-sm">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <div className="px-2 pt-2 pb-3 space-y-1">
             <Link
               to="/"
               className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsOpen(false)}
             >
               Home
             </Link>
             <Link
               to="/trending"
               className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsOpen(false)}
             >
               Trending
             </Link>
             <Link
               to="/dubbed"
               className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsOpen(false)}
             >
               Dubbed
             </Link>
-            <form onSubmit={handleSearch} className="relative px-3 py-2">
-              <input
-                type="text"
-                placeholder="Search anime..."
-                className="w-full bg-netflix-dark/50 text-white pl-10 pr-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-netflix-red"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search className="absolute left-6 top-4.5 h-5 w-5 text-gray-400" />
+            <form onSubmit={handleSearch} className="px-3 py-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search anime..."
+                  className="w-full bg-netflix-dark/50 text-white pl-10 pr-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-netflix-red"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              </div>
             </form>
           </div>
         </div>

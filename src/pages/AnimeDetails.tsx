@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -57,7 +56,6 @@ const AnimeDetails = () => {
     <div className="min-h-screen bg-netflix-black">
       <Navbar />
       <div className="relative">
-        {/* Hero Banner */}
         <div
           className="h-[60vh] bg-cover bg-center relative"
           style={{ backgroundImage: `url(${anime.horizontal_img || anime.img})` }}
@@ -67,7 +65,6 @@ const AnimeDetails = () => {
         
         <div className="container mx-auto px-4">
           <div className="relative -mt-48 z-10 grid md:grid-cols-[300px_1fr] gap-8">
-            {/* Anime Poster */}
             <div className="animate-fade-in">
               <img
                 src={anime.img}
@@ -86,7 +83,6 @@ const AnimeDetails = () => {
               </div>
             </div>
 
-            {/* Anime Details */}
             <div className="text-white space-y-6 animate-fade-in">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">{anime.name}</h1>
               
@@ -113,8 +109,7 @@ const AnimeDetails = () => {
                 </div>
               </div>
 
-              {/* Episodes Section */}
-              {anime.episodes && anime.episodes.length > 0 && (
+              {anime?.episodes && anime.episodes.length > 0 && (
                 <div className="pt-8">
                   <h2 className="text-xl md:text-2xl font-bold mb-6 inline-block relative after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-netflix-red after:-bottom-2 after:left-0">
                     Episodes
@@ -128,10 +123,14 @@ const AnimeDetails = () => {
                       >
                         <div className="aspect-video relative">
                           <img
-                            src={episode.poster || episode.img}
+                            src={episode.poster}
                             alt={episode.name}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             loading="lazy"
+                            onError={(e) => {
+                              const img = e.target as HTMLImageElement;
+                              img.src = anime.img; // Fallback to anime image if episode poster fails
+                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
                             <div className="absolute inset-0 flex items-center justify-center">
@@ -163,7 +162,6 @@ const AnimeDetails = () => {
             </div>
           </div>
 
-          {/* Recommendations Section */}
           {recommendations?.items && recommendations.items.length > 0 && (
             <div className="mt-16">
               <AnimeGrid
