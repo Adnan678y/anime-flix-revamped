@@ -93,14 +93,14 @@ const AnimeDetails = () => {
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5 text-netflix-red" />
-                  <span>2023</span>
+                  <span>{anime.Release_year}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Users className="w-5 h-5 text-netflix-red" />
-                  <span>TV Series</span>
+                  <span>{anime.status}</span>
                 </div>
                 <div className="bg-netflix-red/20 text-netflix-red px-3 py-1 rounded-full text-sm font-semibold">
-                  Ongoing
+                  {anime.status}
                 </div>
               </div>
 
@@ -119,25 +119,41 @@ const AnimeDetails = () => {
                   <h2 className="text-xl md:text-2xl font-bold mb-6 inline-block relative after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-netflix-red after:-bottom-2 after:left-0">
                     Episodes
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                     {anime.episodes.map((episode) => (
                       <Link
                         key={episode.id}
                         to={`/episode/${episode.id}`}
-                        className="group relative aspect-video overflow-hidden rounded-lg bg-netflix-dark transition-transform duration-300 hover:scale-105"
+                        className="group relative bg-netflix-dark rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-xl hover:shadow-netflix-red/20"
                       >
-                        <img
-                          src={episode.poster || episode.img}
-                          alt={episode.name}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="aspect-video relative">
+                          <img
+                            src={episode.poster || episode.img}
+                            alt={episode.name}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-full bg-netflix-red/90 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                                <Play className="w-6 h-6 text-white" fill="currentColor" />
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-                          <p className="text-white text-sm font-medium line-clamp-2">{episode.name}</p>
+                        <div className="p-4">
+                          <h3 className="text-white font-semibold text-sm md:text-base line-clamp-2 group-hover:text-netflix-red transition-colors duration-300">
+                            {episode.name}
+                          </h3>
+                          <div className="mt-2 flex items-center space-x-2 text-netflix-gray text-xs md:text-sm">
+                            <Clock className="w-4 h-4" />
+                            <span>24min</span>
+                          </div>
+                        </div>
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="bg-netflix-red text-white text-xs font-bold px-2 py-1 rounded">
+                            HD
+                          </div>
                         </div>
                       </Link>
                     ))}
