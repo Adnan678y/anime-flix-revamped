@@ -1,6 +1,7 @@
 
 import { Link } from 'react-router-dom';
 import { Play, Star } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Anime {
   id: number;
@@ -15,13 +16,15 @@ interface AnimeGridProps {
 }
 
 export const AnimeGrid = ({ title, items, isLoading }: AnimeGridProps) => {
+  const isMobile = useIsMobile();
+
   if (isLoading) {
     return (
-      <div className="my-8">
-        <h2 className="text-3xl font-bold text-white mb-6 inline-block relative after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-netflix-red after:-bottom-2 after:left-0 animate-fade-in">
+      <div className="my-6 md:my-8">
+        <h2 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-white mb-4 md:mb-6 inline-block relative after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-netflix-red after:-bottom-2 after:left-0 animate-fade-in`}>
           {title}
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
           {Array.from({ length: 10 }).map((_, index) => (
             <div 
               key={index} 
@@ -38,11 +41,11 @@ export const AnimeGrid = ({ title, items, isLoading }: AnimeGridProps) => {
   }
 
   return (
-    <div className="my-8 animate-fade-in">
-      <h2 className="text-3xl font-bold text-white mb-6 inline-block relative after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-netflix-red after:-bottom-2 after:left-0">
+    <div className="my-6 md:my-8 animate-fade-in">
+      <h2 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-white mb-4 md:mb-6 inline-block relative after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-netflix-red after:-bottom-2 after:left-0`}>
         {title}
       </h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
         {items.map((anime) => (
           <Link
             key={anime.id}
@@ -56,12 +59,12 @@ export const AnimeGrid = ({ title, items, isLoading }: AnimeGridProps) => {
               loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-              <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+              <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                 <div className="flex items-center space-x-2 mb-2">
-                  <Play className="w-5 h-5 text-netflix-red" />
-                  <Star className="w-4 h-4 text-yellow-400" fill="currentColor" />
+                  <Play className="w-4 h-4 md:w-5 md:h-5 text-netflix-red" />
+                  <Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" fill="currentColor" />
                 </div>
-                <h3 className="text-white text-lg font-semibold line-clamp-2">{anime.name}</h3>
+                <h3 className="text-white text-sm md:text-lg font-semibold line-clamp-2">{anime.name}</h3>
               </div>
             </div>
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

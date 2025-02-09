@@ -5,8 +5,10 @@ import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { Link } from 'react-router-dom';
 import { Play, Star, Clock, Calendar, Users, Info } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const AnimeDetails = () => {
+  const isMobile = useIsMobile();
   const { id } = useParams<{ id: string }>();
   const { data: anime, isLoading } = useQuery({
     queryKey: ['anime', id],
@@ -51,7 +53,7 @@ const AnimeDetails = () => {
         {/* Hero Banner */}
         <div
           className="h-[60vh] bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${anime.img})` }}
+          style={{ backgroundImage: `url(${anime.horizontal_img || anime.img})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-netflix-black via-netflix-black/80 to-transparent" />
         </div>
@@ -79,7 +81,7 @@ const AnimeDetails = () => {
 
             {/* Anime Details */}
             <div className="text-white space-y-6 animate-fade-in">
-              <h1 className="text-4xl md:text-5xl font-bold">{anime.name}</h1>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">{anime.name}</h1>
               
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
@@ -98,8 +100,8 @@ const AnimeDetails = () => {
               <div className="space-y-4">
                 <div className="flex items-start space-x-2">
                   <Info className="w-5 h-5 text-netflix-gray shrink-0 mt-1" />
-                  <p className="text-netflix-gray text-lg leading-relaxed">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                  <p className="text-netflix-gray text-base md:text-lg leading-relaxed">
+                    {anime.overview || 'No description available.'}
                   </p>
                 </div>
               </div>
@@ -107,7 +109,7 @@ const AnimeDetails = () => {
               {/* Episodes Section */}
               {anime.episodes && anime.episodes.length > 0 && (
                 <div className="pt-8">
-                  <h2 className="text-2xl font-bold mb-6 inline-block relative after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-netflix-red after:-bottom-2 after:left-0">
+                  <h2 className="text-xl md:text-2xl font-bold mb-6 inline-block relative after:content-[''] after:absolute after:w-1/3 after:h-1 after:bg-netflix-red after:-bottom-2 after:left-0">
                     Episodes
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -118,7 +120,7 @@ const AnimeDetails = () => {
                         className="group relative aspect-video overflow-hidden rounded-lg bg-netflix-dark transition-transform duration-300 hover:scale-105"
                       >
                         <img
-                          src={episode.img}
+                          src={episode.poster || episode.img}
                           alt={episode.name}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
