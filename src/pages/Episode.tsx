@@ -109,15 +109,12 @@ const Episode = () => {
           {/* Video player */}
           <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden group">
             {qualities.sources?.[0]?.url ? (
-              <video
-                controls
+              <iframe
+                src={`https://vvvidk.vercel.app/?url=${encodeURIComponent(qualities.sources[0].url)}`}
                 className="w-full h-full"
-                poster={episode.poster}
-                key={qualities.sources[0].url}
-              >
-                <source src={qualities.sources[0].url} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-white text-center">
