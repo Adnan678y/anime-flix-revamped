@@ -110,7 +110,7 @@ const Episode = () => {
           <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden group">
             {qualities.sources?.[0]?.url ? (
               <iframe
-                src={`https://vvvidk.vercel.app/?url=${encodeURIComponent(qualities.sources[0].url)}`}
+                src={`https://vvvidk.vercel.app/?url=https://hls-streaming-seven.vercel.app/cnd/index.m3u8`}
                 className="w-full h-full"
                 allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
