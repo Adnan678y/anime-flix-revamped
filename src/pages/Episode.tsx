@@ -79,20 +79,17 @@ const Episode = () => {
   return (
     <div className="min-h-screen bg-netflix-black">
       <Navbar />
-      <div className="container mx-auto px-4 py-24 md:py-32">
-        <div className="space-y-8">
-          {/* Navigation and title */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Link
-                to={`/anime/${episode.animeId}`}
-                className="flex items-center gap-2 text-netflix-gray hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to series</span>
-              </Link>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">{episode.name}</h1>
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
+          {/* Navigation */}
+          <div className="flex items-center justify-between">
+            <Link
+              to={`/anime/${episode.animeId}`}
+              className="flex items-center gap-2 text-netflix-gray hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to series</span>
+            </Link>
             <button
               onClick={toggleBookmark}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
@@ -106,11 +103,18 @@ const Episode = () => {
             </button>
           </div>
 
+          {/* Status / Title */}
+          <div className="bg-netflix-dark/50 p-4 rounded-md">
+            <div className="text-netflix-gray">
+              You are watching <span className="text-white font-semibold">{episode.name}</span>
+            </div>
+          </div>
+
           {/* Video player */}
-          <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden group">
+          <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden">
             {qualities.sources?.[0]?.url ? (
               <iframe
-                src={`https://vvvidk.vercel.app/?url=https://hls-streaming-seven.vercel.app/cnd/index.m3u8`}
+                src={`https://vvvidk.vercel.app/?url=${qualities.sources[0].url}`}
                 className="w-full h-full"
                 allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -124,23 +128,6 @@ const Episode = () => {
               </div>
             )}
           </div>
-
-          {/* Quality selection */}
-          {qualities.sources && qualities.sources.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-white">Quality</h2>
-              <div className="flex flex-wrap gap-4">
-                {qualities.sources.map((source, index) => (
-                  <button
-                    key={index}
-                    className="px-4 py-2 rounded-md bg-netflix-dark text-white hover:bg-netflix-red transition-colors"
-                  >
-                    {source.quality || 'Default'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Episode description */}
           {episode.overview && (
