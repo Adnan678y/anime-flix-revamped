@@ -119,29 +119,29 @@ const AnimeDetails = () => {
                       <Link
                         key={episode.id}
                         to={`/episode/${episode.id}`}
-                        className="group relative bg-netflix-dark rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-xl hover:shadow-netflix-red/20"
+                        className="group relative bg-netflix-dark rounded-lg overflow-hidden active:scale-95 transition-all duration-300"
                       >
                         <div className="aspect-video relative">
                           <img
                             src={episode.poster}
                             alt={episode.name}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-300 @media(hover: hover){group-hover:scale-110}"
                             loading="lazy"
                             onError={(e) => {
                               const img = e.target as HTMLImageElement;
-                              img.src = anime.img; // Fallback to anime image if episode poster fails
+                              img.src = anime.img;
                             }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 @media(hover: hover){group-hover:opacity-100} transition-all duration-300">
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-12 h-12 rounded-full bg-netflix-red/90 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                              <div className="w-12 h-12 rounded-full bg-netflix-red/90 flex items-center justify-center transform scale-0 @media(hover: hover){group-hover:scale-100} transition-transform duration-300">
                                 <Play className="w-6 h-6 text-white" fill="currentColor" />
                               </div>
                             </div>
                           </div>
                         </div>
                         <div className="p-4">
-                          <h3 className="text-white font-semibold text-sm md:text-base line-clamp-2 group-hover:text-netflix-red transition-colors duration-300">
+                          <h3 className="text-white font-semibold text-sm md:text-base line-clamp-2 @media(hover: hover){group-hover:text-netflix-red} transition-colors duration-300">
                             {episode.name}
                           </h3>
                           <div className="mt-2 flex items-center space-x-2 text-netflix-gray text-xs md:text-sm">
@@ -149,7 +149,7 @@ const AnimeDetails = () => {
                             <span>24min</span>
                           </div>
                         </div>
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute top-2 right-2 opacity-0 @media(hover: hover){group-hover:opacity-100} transition-opacity duration-300">
                           <div className="bg-netflix-red text-white text-xs font-bold px-2 py-1 rounded">
                             HD
                           </div>
