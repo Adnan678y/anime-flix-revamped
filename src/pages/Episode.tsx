@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -51,6 +52,27 @@ const Episode = () => {
     enabled: !!id,
   });
 
+  // Add a query to get the user's current interaction
+  const { data: userCurrentInteraction } = useQuery({
+    queryKey: ['user-interaction', id, userIp],
+    queryFn: async () => {
+      if (!userIp) return null;
+      const { data } = await supabase
+        .from('episodes_interactions')
+        .select('interaction_type')
+        .eq('episode_id', id)
+        .eq('ip_address', userIp)
+        .maybeSingle();
+      return data?.interaction_type as 'like' | 'dislike' | null;
+    },
+    enabled: !!id && !!userIp,
+  });
+
+  // Update userInteraction when userCurrentInteraction changes
+  useEffect(() => {
+    setUserInteraction(userCurrentInteraction || null);
+  }, [userCurrentInteraction]);
+
   const { data: comments = [] } = useQuery({
     queryKey: ['episode-comments', id],
     queryFn: async () => {
@@ -97,29 +119,40 @@ const Episode = () => {
           .eq('ip_address', userIp);
         setUserInteraction(null);
       } else {
-        // If there was a previous interaction, delete it
-        if (userInteraction) {
+        // Check if there's an existing interaction
+        const { data: existing } = await supabase
+          .from('episodes_interactions')
+          .select()
+          .eq('episode_id', id)
+          .eq('ip_address', userIp)
+          .maybeSingle();
+
+        if (existing) {
+          // Update existing interaction
           await supabase
             .from('episodes_interactions')
-            .delete()
+            .update({ interaction_type: type })
             .eq('episode_id', id)
             .eq('ip_address', userIp);
+        } else {
+          // Insert new interaction
+          await supabase
+            .from('episodes_interactions')
+            .insert({
+              episode_id: id,
+              interaction_type: type,
+              ip_address: userIp
+            });
         }
-        // Add new interaction
-        await supabase
-          .from('episodes_interactions')
-          .insert({
-            episode_id: id,
-            interaction_type: type,
-            ip_address: userIp
-          });
         setUserInteraction(type);
       }
       
       // Refresh interactions data
       queryClient.invalidateQueries({ queryKey: ['episode-interactions', id] });
+      queryClient.invalidateQueries({ queryKey: ['user-interaction', id, userIp] });
       toast.success('Thanks for your feedback!');
     } catch (error) {
+      console.error('Interaction error:', error);
       toast.error('Failed to save your feedback');
     }
   };
@@ -160,6 +193,7 @@ const Episode = () => {
       queryClient.invalidateQueries({ queryKey: ['episode-comments', id] });
       toast.success('Comment added!');
     } catch (error) {
+      console.error('Comment error:', error);
       toast.error('Failed to add comment');
     }
   };
