@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -11,16 +10,11 @@ const Episode = () => {
   const { id } = useParams<{ id: string }>();
   const [isBookmarked, setIsBookmarked] = useState(false);
   
-  const { data: episode, isLoading: isLoadingEpisode } = useQuery({
+  const { data: episode, isLoading: isLoadingEpisode, error: episodeError } = useQuery({
     queryKey: ['episode', id],
     queryFn: () => api.getEpisode(id!),
     enabled: !!id,
-  });
-
-  const { data: qualities, isLoading: isLoadingQualities } = useQuery({
-    queryKey: ['qualities', id],
-    queryFn: () => api.getQuality(id!),
-    enabled: !!id,
+    onError: () => toast.error('Failed to load episode'),
   });
 
   useEffect(() => {
@@ -37,7 +31,7 @@ const Episode = () => {
     let newBookmarks;
     
     if (isBookmarked) {
-      newBookmarks = bookmarks.filter((id: string) => id !== episode.id);
+      newBookmarks = bookmarks.filter((eid: number) => eid !== episode.id);
       toast.success('Bookmark removed');
     } else {
       newBookmarks = [...bookmarks, episode.id];
@@ -48,9 +42,7 @@ const Episode = () => {
     setIsBookmarked(!isBookmarked);
   };
 
-  const isLoading = isLoadingEpisode || isLoadingQualities;
-
-  if (isLoading) {
+  if (isLoadingEpisode) {
     return (
       <div className="min-h-screen bg-netflix-black">
         <Navbar />
@@ -65,7 +57,7 @@ const Episode = () => {
     );
   }
 
-  if (!episode || !qualities) {
+  if (!episode) {
     return (
       <div className="min-h-screen bg-netflix-black">
         <Navbar />
@@ -88,7 +80,7 @@ const Episode = () => {
               className="flex items-center gap-2 text-netflix-gray hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span>Back to series</span>
+              <span>Back to {episode.animeName}</span>
             </Link>
             <button
               onClick={toggleBookmark}
@@ -112,9 +104,9 @@ const Episode = () => {
 
           {/* Video player */}
           <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden">
-            {qualities.sources?.[0]?.url ? (
+            {episode.stream ? (
               <iframe
-                src={`https://vvvidk.vercel.app/?url=${qualities.sources[0].url}`}
+                src={`https://vvvidk.vercel.app/?url=${episode.stream}`}
                 className="w-full h-full"
                 allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -130,14 +122,16 @@ const Episode = () => {
           </div>
 
           {/* Episode description */}
-          {episode.overview && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-white">Overview</h2>
-              <p className="text-netflix-gray text-lg leading-relaxed">
-                {episode.overview}
-              </p>
+          {episode.poster && (
+            <div className="text-center">
+              <img src={episode.poster} alt={episode.name} className="mx-auto rounded-lg max-w-xs" />
             </div>
           )}
+
+          {episode.animeName && (
+            <h2 className="text-xl font-semibold text-white text-center">{episode.animeName}</h2>
+          )}
+
         </div>
       </div>
     </div>
