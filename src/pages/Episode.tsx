@@ -1,21 +1,21 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { ArrowLeft, Play, Bookmark, ThumbsUp, ThumbsDown, Share2, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase } from "@/integrations/supabase/client";
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [likes, setLikes] = useState(0);
-  const [dislikes, setDislikes] = useState(0);
   const [userInteraction, setUserInteraction] = useState<'like' | 'dislike' | null>(null);
   const [comment, setComment] = useState('');
-  const [comments, setComments] = useState<Array<{ text: string; timestamp: string }>>([]);
   
+  // Fetch episode data
   const { data: episode, isLoading: isLoadingEpisode } = useQuery({
     queryKey: ['episode', id],
     queryFn: () => api.getEpisode(id!),
@@ -23,12 +23,58 @@ const Episode = () => {
     onError: () => toast.error('Failed to load episode'),
   });
 
+  // Fetch interactions (likes/dislikes)
+  const { data: interactions } = useQuery({
+    queryKey: ['episode-interactions', id],
+    queryFn: async () => {
+      const { data: likes } = await supabase
+        .from('episodes_interactions')
+        .select('interaction_type')
+        .eq('episode_id', id);
+      return likes || [];
+    },
+    enabled: !!id,
+  });
+
+  // Fetch comments
+  const { data: comments = [] } = useQuery({
+    queryKey: ['episode-comments', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('episode_comments')
+        .select('*')
+        .eq('episode_id', id)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  // Calculate likes and dislikes
+  const likes = interactions?.filter(i => i.interaction_type === 'like').length || 0;
+  const dislikes = interactions?.filter(i => i.interaction_type === 'dislike').length || 0;
+
   useEffect(() => {
     if (episode?.id) {
       const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
       setIsBookmarked(bookmarks.includes(episode.id));
+
+      // Check user's previous interaction
+      const checkUserInteraction = async () => {
+        const { data } = await supabase
+          .from('episodes_interactions')
+          .select('interaction_type')
+          .eq('episode_id', id)
+          .maybeSingle();
+        
+        if (data) {
+          setUserInteraction(data.interaction_type as 'like' | 'dislike');
+        }
+      };
+
+      checkUserInteraction();
     }
-  }, [episode?.id]);
+  }, [episode?.id, id]);
 
   const toggleBookmark = () => {
     if (!episode) return;
@@ -48,32 +94,38 @@ const Episode = () => {
     setIsBookmarked(!isBookmarked);
   };
 
-  const handleLike = () => {
-    if (userInteraction === 'like') {
-      setLikes(prev => prev - 1);
-      setUserInteraction(null);
-    } else {
-      if (userInteraction === 'dislike') {
-        setDislikes(prev => prev - 1);
+  const handleInteraction = async (type: 'like' | 'dislike') => {
+    try {
+      if (userInteraction === type) {
+        // Remove interaction
+        await supabase
+          .from('episodes_interactions')
+          .delete()
+          .eq('episode_id', id);
+        setUserInteraction(null);
+      } else {
+        // If there was a previous interaction, delete it
+        if (userInteraction) {
+          await supabase
+            .from('episodes_interactions')
+            .delete()
+            .eq('episode_id', id);
+        }
+        // Add new interaction
+        await supabase
+          .from('episodes_interactions')
+          .insert([
+            { episode_id: id, interaction_type: type }
+          ]);
+        setUserInteraction(type);
       }
-      setLikes(prev => prev + 1);
-      setUserInteraction('like');
+      
+      // Refresh interactions data
+      queryClient.invalidateQueries({ queryKey: ['episode-interactions', id] });
+      toast.success('Thanks for your feedback!');
+    } catch (error) {
+      toast.error('Failed to save your feedback');
     }
-    toast.success('Thanks for your feedback!');
-  };
-
-  const handleDislike = () => {
-    if (userInteraction === 'dislike') {
-      setDislikes(prev => prev - 1);
-      setUserInteraction(null);
-    } else {
-      if (userInteraction === 'like') {
-        setLikes(prev => prev - 1);
-      }
-      setDislikes(prev => prev + 1);
-      setUserInteraction('dislike');
-    }
-    toast.success('Thanks for your feedback!');
   };
 
   const handleShare = () => {
@@ -92,16 +144,23 @@ const Episode = () => {
     }
   };
 
-  const handleComment = (e: React.FormEvent) => {
+  const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) return;
     
-    setComments(prev => [...prev, {
-      text: comment,
-      timestamp: new Date().toISOString()
-    }]);
-    setComment('');
-    toast.success('Comment added!');
+    try {
+      await supabase
+        .from('episode_comments')
+        .insert([
+          { episode_id: id, comment_text: comment }
+        ]);
+      
+      setComment('');
+      queryClient.invalidateQueries({ queryKey: ['episode-comments', id] });
+      toast.success('Comment added!');
+    } catch (error) {
+      toast.error('Failed to add comment');
+    }
   };
 
   if (isLoadingEpisode) {
@@ -186,7 +245,7 @@ const Episode = () => {
           {/* Interaction buttons */}
           <div className="flex items-center gap-4">
             <button
-              onClick={handleLike}
+              onClick={() => handleInteraction('like')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md ${
                 userInteraction === 'like'
                   ? 'bg-green-600 text-white'
@@ -197,7 +256,7 @@ const Episode = () => {
               <span>{likes}</span>
             </button>
             <button
-              onClick={handleDislike}
+              onClick={() => handleInteraction('dislike')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md ${
                 userInteraction === 'dislike'
                   ? 'bg-red-600 text-white'
@@ -237,11 +296,11 @@ const Episode = () => {
               </button>
             </form>
             <div className="space-y-4">
-              {comments.map((comment, index) => (
-                <div key={index} className="bg-netflix-dark/50 p-4 rounded-md">
-                  <p className="text-white">{comment.text}</p>
+              {comments.map((comment) => (
+                <div key={comment.id} className="bg-netflix-dark/50 p-4 rounded-md">
+                  <p className="text-white">{comment.comment_text}</p>
                   <p className="text-sm text-netflix-gray mt-2">
-                    {new Date(comment.timestamp).toLocaleString()}
+                    {new Date(comment.created_at).toLocaleString()}
                   </p>
                 </div>
               ))}
