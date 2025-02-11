@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -259,7 +258,7 @@ const Episode = () => {
           <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden">
             {episode.stream ? (
               <iframe
-                src={`https://vvvidk.vercel.app/?url=${episode.stream}`}
+                src={`https://vvvidk.vercel.app/?url=${episode.stream}&embed=true`}
                 className="w-full h-full"
                 allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
