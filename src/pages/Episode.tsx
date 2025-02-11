@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -14,16 +13,31 @@ const Episode = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [userInteraction, setUserInteraction] = useState<'like' | 'dislike' | null>(null);
   const [comment, setComment] = useState('');
-  
-  // Fetch episode data
+  const [userIp, setUserIp] = useState<string>('');
+
+  useEffect(() => {
+    const fetchIp = async () => {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        setUserIp(data.ip);
+      } catch (error) {
+        console.error('Failed to fetch IP:', error);
+        setUserIp('0.0.0.0'); // Fallback IP
+      }
+    };
+    fetchIp();
+  }, []);
+
   const { data: episode, isLoading: isLoadingEpisode } = useQuery({
     queryKey: ['episode', id],
     queryFn: () => api.getEpisode(id!),
     enabled: !!id,
-    onError: () => toast.error('Failed to load episode'),
+    meta: {
+      onError: () => toast.error('Failed to load episode')
+    }
   });
 
-  // Fetch interactions (likes/dislikes)
   const { data: interactions } = useQuery({
     queryKey: ['episode-interactions', id],
     queryFn: async () => {
@@ -36,7 +50,6 @@ const Episode = () => {
     enabled: !!id,
   });
 
-  // Fetch comments
   const { data: comments = [] } = useQuery({
     queryKey: ['episode-comments', id],
     queryFn: async () => {
@@ -50,7 +63,6 @@ const Episode = () => {
     enabled: !!id,
   });
 
-  // Calculate likes and dislikes
   const likes = interactions?.filter(i => i.interaction_type === 'like').length || 0;
   const dislikes = interactions?.filter(i => i.interaction_type === 'dislike').length || 0;
 
@@ -59,12 +71,12 @@ const Episode = () => {
       const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
       setIsBookmarked(bookmarks.includes(episode.id));
 
-      // Check user's previous interaction
       const checkUserInteraction = async () => {
         const { data } = await supabase
           .from('episodes_interactions')
           .select('interaction_type')
           .eq('episode_id', id)
+          .eq('ip_address', userIp)
           .maybeSingle();
         
         if (data) {
@@ -72,9 +84,11 @@ const Episode = () => {
         }
       };
 
-      checkUserInteraction();
+      if (userIp) {
+        checkUserInteraction();
+      }
     }
-  }, [episode?.id, id]);
+  }, [episode?.id, id, userIp]);
 
   const toggleBookmark = () => {
     if (!episode) return;
@@ -95,13 +109,19 @@ const Episode = () => {
   };
 
   const handleInteraction = async (type: 'like' | 'dislike') => {
+    if (!userIp) {
+      toast.error('Unable to process your interaction at this time');
+      return;
+    }
+
     try {
       if (userInteraction === type) {
         // Remove interaction
         await supabase
           .from('episodes_interactions')
           .delete()
-          .eq('episode_id', id);
+          .eq('episode_id', id)
+          .eq('ip_address', userIp);
         setUserInteraction(null);
       } else {
         // If there was a previous interaction, delete it
@@ -109,14 +129,17 @@ const Episode = () => {
           await supabase
             .from('episodes_interactions')
             .delete()
-            .eq('episode_id', id);
+            .eq('episode_id', id)
+            .eq('ip_address', userIp);
         }
         // Add new interaction
         await supabase
           .from('episodes_interactions')
-          .insert([
-            { episode_id: id, interaction_type: type }
-          ]);
+          .insert({
+            episode_id: id,
+            interaction_type: type,
+            ip_address: userIp
+          });
         setUserInteraction(type);
       }
       
@@ -146,14 +169,19 @@ const Episode = () => {
 
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim()) return;
+    if (!comment.trim() || !userIp) {
+      toast.error('Unable to post comment at this time');
+      return;
+    }
     
     try {
       await supabase
         .from('episode_comments')
-        .insert([
-          { episode_id: id, comment_text: comment }
-        ]);
+        .insert({
+          episode_id: id,
+          comment_text: comment,
+          ip_address: userIp
+        });
       
       setComment('');
       queryClient.invalidateQueries({ queryKey: ['episode-comments', id] });
@@ -194,7 +222,6 @@ const Episode = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
-          {/* Navigation */}
           <div className="flex items-center justify-between">
             <Link
               to={`/anime/${episode.animeId}`}
@@ -216,14 +243,12 @@ const Episode = () => {
             </button>
           </div>
 
-          {/* Status / Title */}
           <div className="bg-netflix-dark/50 p-4 rounded-md">
             <div className="text-netflix-gray">
               You are watching <span className="text-white font-semibold">{episode.name}</span>
             </div>
           </div>
 
-          {/* Video player */}
           <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden">
             {episode.stream ? (
               <iframe
@@ -242,7 +267,6 @@ const Episode = () => {
             )}
           </div>
 
-          {/* Interaction buttons */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => handleInteraction('like')}
@@ -275,7 +299,6 @@ const Episode = () => {
             </button>
           </div>
 
-          {/* Comments section */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
@@ -307,7 +330,6 @@ const Episode = () => {
             </div>
           </div>
 
-          {/* Episode thumbnail */}
           {episode.poster && (
             <div className="text-center">
               <img src={episode.poster} alt={episode.name} className="mx-auto rounded-lg max-w-xs" />
