@@ -1,16 +1,22 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
-import { ArrowLeft, Play, Bookmark } from 'lucide-react';
+import { ArrowLeft, Play, Bookmark, ThumbsUp, ThumbsDown, Share2, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [dislikes, setDislikes] = useState(0);
+  const [userInteraction, setUserInteraction] = useState<'like' | 'dislike' | null>(null);
+  const [comment, setComment] = useState('');
+  const [comments, setComments] = useState<Array<{ text: string; timestamp: string }>>([]);
   
-  const { data: episode, isLoading: isLoadingEpisode, error: episodeError } = useQuery({
+  const { data: episode, isLoading: isLoadingEpisode } = useQuery({
     queryKey: ['episode', id],
     queryFn: () => api.getEpisode(id!),
     enabled: !!id,
@@ -40,6 +46,62 @@ const Episode = () => {
     
     localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
     setIsBookmarked(!isBookmarked);
+  };
+
+  const handleLike = () => {
+    if (userInteraction === 'like') {
+      setLikes(prev => prev - 1);
+      setUserInteraction(null);
+    } else {
+      if (userInteraction === 'dislike') {
+        setDislikes(prev => prev - 1);
+      }
+      setLikes(prev => prev + 1);
+      setUserInteraction('like');
+    }
+    toast.success('Thanks for your feedback!');
+  };
+
+  const handleDislike = () => {
+    if (userInteraction === 'dislike') {
+      setDislikes(prev => prev - 1);
+      setUserInteraction(null);
+    } else {
+      if (userInteraction === 'like') {
+        setLikes(prev => prev - 1);
+      }
+      setDislikes(prev => prev + 1);
+      setUserInteraction('dislike');
+    }
+    toast.success('Thanks for your feedback!');
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: episode?.name,
+        text: `Watch ${episode?.name} on Tenjku Anime`,
+        url: window.location.href,
+      }).catch(() => {
+        navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard!');
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard!');
+    }
+  };
+
+  const handleComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
+    
+    setComments(prev => [...prev, {
+      text: comment,
+      timestamp: new Date().toISOString()
+    }]);
+    setComment('');
+    toast.success('Comment added!');
   };
 
   if (isLoadingEpisode) {
@@ -121,7 +183,72 @@ const Episode = () => {
             )}
           </div>
 
-          {/* Episode description */}
+          {/* Interaction buttons */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md ${
+                userInteraction === 'like'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-netflix-dark text-netflix-gray hover:text-white'
+              }`}
+            >
+              <ThumbsUp className="w-5 h-5" />
+              <span>{likes}</span>
+            </button>
+            <button
+              onClick={handleDislike}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md ${
+                userInteraction === 'dislike'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-netflix-dark text-netflix-gray hover:text-white'
+              }`}
+            >
+              <ThumbsDown className="w-5 h-5" />
+              <span>{dislikes}</span>
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-netflix-dark text-netflix-gray hover:text-white"
+            >
+              <Share2 className="w-5 h-5" />
+              <span>Share</span>
+            </button>
+          </div>
+
+          {/* Comments section */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Comments
+            </h2>
+            <form onSubmit={handleComment} className="space-y-2">
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full bg-netflix-dark text-white rounded-md p-3 min-h-[100px]"
+                placeholder="Write a comment..."
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-netflix-red text-white rounded-md hover:bg-netflix-red/90"
+              >
+                Post Comment
+              </button>
+            </form>
+            <div className="space-y-4">
+              {comments.map((comment, index) => (
+                <div key={index} className="bg-netflix-dark/50 p-4 rounded-md">
+                  <p className="text-white">{comment.text}</p>
+                  <p className="text-sm text-netflix-gray mt-2">
+                    {new Date(comment.timestamp).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Episode thumbnail */}
           {episode.poster && (
             <div className="text-center">
               <img src={episode.poster} alt={episode.name} className="mx-auto rounded-lg max-w-xs" />
@@ -131,7 +258,6 @@ const Episode = () => {
           {episode.animeName && (
             <h2 className="text-xl font-semibold text-white text-center">{episode.animeName}</h2>
           )}
-
         </div>
       </div>
     </div>
