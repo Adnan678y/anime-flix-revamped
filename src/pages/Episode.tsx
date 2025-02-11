@@ -6,6 +6,7 @@ import { ArrowLeft, Play, Bookmark, ThumbsUp, ThumbsDown, Share2, MessageSquare 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
+import { getBookmarks, toggleBookmark } from '@/utils/bookmarks';
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,44 +69,16 @@ const Episode = () => {
 
   useEffect(() => {
     if (episode?.id) {
-      const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-      setIsBookmarked(bookmarks.includes(episode.id));
-
-      const checkUserInteraction = async () => {
-        const { data } = await supabase
-          .from('episodes_interactions')
-          .select('interaction_type')
-          .eq('episode_id', id)
-          .eq('ip_address', userIp)
-          .maybeSingle();
-        
-        if (data) {
-          setUserInteraction(data.interaction_type as 'like' | 'dislike');
-        }
-      };
-
-      if (userIp) {
-        checkUserInteraction();
-      }
+      setIsBookmarked(getBookmarks().includes(episode.id));
     }
-  }, [episode?.id, id, userIp]);
+  }, [episode?.id]);
 
-  const toggleBookmark = () => {
+  const toggleBookmarkHandler = () => {
     if (!episode) return;
     
-    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-    let newBookmarks;
-    
-    if (isBookmarked) {
-      newBookmarks = bookmarks.filter((eid: number) => eid !== episode.id);
-      toast.success('Bookmark removed');
-    } else {
-      newBookmarks = [...bookmarks, episode.id];
-      toast.success('Bookmark added');
-    }
-    
-    localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
-    setIsBookmarked(!isBookmarked);
+    const newIsBookmarked = toggleBookmark(episode.id);
+    setIsBookmarked(newIsBookmarked);
+    toast.success(newIsBookmarked ? 'Bookmark added' : 'Bookmark removed');
   };
 
   const handleInteraction = async (type: 'like' | 'dislike') => {
@@ -231,7 +204,7 @@ const Episode = () => {
               <span>Back to {episode.animeName}</span>
             </Link>
             <button
-              onClick={toggleBookmark}
+              onClick={toggleBookmarkHandler}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                 isBookmarked 
                 ? 'bg-netflix-red text-white' 
