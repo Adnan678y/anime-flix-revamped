@@ -1,9 +1,8 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
-import { ArrowLeft, Play, Bookmark, ThumbsUp, ThumbsDown, Share2 } from 'lucide-react';
+import { ArrowLeft, Play, Bookmark, ThumbsUp, ThumbsDown, Share2, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +15,8 @@ const Episode = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [userInteraction, setUserInteraction] = useState<'like' | 'dislike' | null>(null);
   const [userIp, setUserIp] = useState<string>('');
+  const [comment, setComment] = useState('');
+  const [showComments, setShowComments] = useState(false);
 
   useEffect(() => {
     const fetchIp = async () => {
@@ -167,6 +168,44 @@ const Episode = () => {
     }
   };
 
+  const { data: comments = [] } = useQuery({
+    queryKey: ['episode-comments', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('episode_comments')
+        .select('*')
+        .eq('episode_id', id)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+    enabled: !!id && showComments, // Only fetch when comments are visible
+  });
+
+  const handleComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim() || !userIp) {
+      toast.error('Unable to post comment at this time');
+      return;
+    }
+    
+    try {
+      await supabase
+        .from('episode_comments')
+        .insert({
+          episode_id: id,
+          comment_text: comment,
+          ip_address: userIp
+        });
+      
+      setComment('');
+      queryClient.invalidateQueries({ queryKey: ['episode-comments', id] });
+      toast.success('Comment added!');
+    } catch (error) {
+      console.error('Comment error:', error);
+      toast.error('Failed to add comment');
+    }
+  };
+
   if (isLoadingEpisode) {
     return (
       <div className="min-h-screen bg-netflix-black">
@@ -284,6 +323,58 @@ const Episode = () => {
               />
             </div>
           )}
+
+          <div className="space-y-4">
+            <button
+              onClick={() => setShowComments(!showComments)}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-netflix-dark text-netflix-gray hover:text-white w-full justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                <span>Comments ({comments.length})</span>
+              </div>
+              <span>{showComments ? '▼' : '▶'}</span>
+            </button>
+
+            {showComments && (
+              <div className="space-y-4 animate-fade-in">
+                <form onSubmit={handleComment} className="space-y-2">
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="w-full bg-netflix-dark text-white rounded-md p-3 min-h-[100px] resize-none"
+                    placeholder="Write a comment..."
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-netflix-red text-white rounded-md hover:bg-netflix-red/90 transition-colors"
+                      disabled={!comment.trim()}
+                    >
+                      Post Comment
+                    </button>
+                  </div>
+                </form>
+
+                <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                  {comments.map((comment) => (
+                    <div 
+                      key={comment.id} 
+                      className="bg-netflix-dark/50 p-4 rounded-md hover:bg-netflix-dark/70 transition-colors"
+                    >
+                      <p className="text-white whitespace-pre-wrap break-words">{comment.comment_text}</p>
+                      <p className="text-sm text-netflix-gray mt-2">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                  {comments.length === 0 && (
+                    <p className="text-netflix-gray text-center py-4">No comments yet. Be the first to comment!</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
