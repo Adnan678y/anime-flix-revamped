@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 import { getBookmarks, toggleBookmark } from '@/utils/bookmarks';
+import { EpisodeGrid } from '@/components/EpisodeGrid';
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +40,15 @@ const Episode = () => {
     }
   });
 
+  const { data: otherEpisodes, isLoading: isLoadingOtherEpisodes } = useQuery({
+    queryKey: ['anime-episodes', episode?.animeId],
+    queryFn: () => api.getAnimeById(episode!.animeId),
+    enabled: !!episode?.animeId,
+    meta: {
+      onError: () => toast.error('Failed to load other episodes')
+    }
+  });
+
   const { data: interactions } = useQuery({
     queryKey: ['episode-interactions', id],
     queryFn: async () => {
@@ -51,7 +61,6 @@ const Episode = () => {
     enabled: !!id,
   });
 
-  // Add a query to get the user's current interaction
   const { data: userCurrentInteraction } = useQuery({
     queryKey: ['user-interaction', id, userIp],
     queryFn: async () => {
@@ -67,7 +76,6 @@ const Episode = () => {
     enabled: !!id && !!userIp,
   });
 
-  // Update userInteraction when userCurrentInteraction changes
   useEffect(() => {
     setUserInteraction(userCurrentInteraction || null);
   }, [userCurrentInteraction]);
@@ -304,6 +312,16 @@ const Episode = () => {
               <span>Share</span>
             </button>
           </div>
+
+          {otherEpisodes?.episodes && otherEpisodes.episodes.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-white">Other Episodes</h2>
+              <EpisodeGrid 
+                episodes={otherEpisodes.episodes} 
+                currentEpisodeId={episode.id}
+              />
+            </div>
+          )}
 
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
