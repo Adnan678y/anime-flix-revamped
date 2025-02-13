@@ -1,5 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
+import Plyr from 'plyr';
+import 'plyr/dist/plyr.css';
 
 interface VideoPlayerProps {
   src: string;
@@ -7,56 +9,68 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<Plyr>();
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!videoRef.current) return;
 
-    // Initialize Swift player
-    const video = document.createElement('video');
-    video.className = 'swift-player';
-    video.setAttribute('playsinline', '');
-    video.setAttribute('controls', '');
-    video.poster = poster || '';
-
-    // Add video source
-    const source = document.createElement('source');
-    source.src = src;
-    source.type = 'video/mp4';
-    video.appendChild(source);
-
-    // Configure Swift player
-    const player = new window.SwiftPlayer(video, {
-      controls: {
-        autohide: 3000,
-        hotkeys: true
+    playerRef.current = new Plyr(videoRef.current, {
+      controls: [
+        'play-large',
+        'play',
+        'progress',
+        'current-time',
+        'mute',
+        'volume',
+        'captions',
+        'settings',
+        'pip',
+        'airplay',
+        'fullscreen',
+      ],
+      settings: ['captions', 'quality', 'speed', 'loop'],
+      quality: {
+        default: 720,
+        options: [4320, 2880, 2160, 1440, 1080, 720, 480, 360, 240]
       },
-      settings: {
-        enabled: true,
-        export: true,
-        animations: true
+      speed: {
+        selected: 1,
+        options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
       },
-      contextmenu: {
-        enabled: true,
-        keepinside: true
-      }
     });
 
-    // Clean up previous video if any
-    containerRef.current.innerHTML = '';
-    containerRef.current.appendChild(video);
-
     return () => {
-      if (player && typeof player.destroy === 'function') {
-        player.destroy();
-      }
+      playerRef.current?.destroy();
     };
-  }, [src, poster]);
+  }, []);
+
+  useEffect(() => {
+    if (!playerRef.current) return;
+    
+    // Update source when it changes
+    playerRef.current.source = {
+      type: 'video',
+      sources: [
+        {
+          src,
+          type: 'video/mp4',
+        },
+      ],
+    };
+  }, [src]);
 
   return (
-    <div 
-      ref={containerRef} 
-      className="relative w-full h-full bg-black swift-player-container"
-    />
+    <div className="relative w-full h-full bg-black">
+      <video
+        ref={videoRef}
+        className="w-full h-full"
+        poster={poster}
+        playsInline
+      >
+        <source src={src} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
   );
 };
