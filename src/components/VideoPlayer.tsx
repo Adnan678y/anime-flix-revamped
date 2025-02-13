@@ -1,7 +1,5 @@
 
 import React, { useEffect, useRef } from 'react';
-import Plyr from 'plyr';
-import 'plyr/dist/plyr.css';
 
 interface VideoPlayerProps {
   src: string;
@@ -9,68 +7,66 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<Plyr>();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!videoRef.current) return;
+    if (!containerRef.current) return;
 
-    playerRef.current = new Plyr(videoRef.current, {
-      controls: [
-        'play-large',
-        'play',
-        'progress',
-        'current-time',
-        'mute',
-        'volume',
-        'captions',
-        'settings',
-        'pip',
-        'airplay',
-        'fullscreen',
-      ],
-      settings: ['captions', 'quality', 'speed', 'loop'],
-      quality: {
-        default: 720,
-        options: [4320, 2880, 2160, 1440, 1080, 720, 480, 360, 240]
-      },
-      speed: {
-        selected: 1,
-        options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
-      },
-    });
-
-    return () => {
-      playerRef.current?.destroy();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!playerRef.current) return;
+    // Create video element
+    const videoElement = document.createElement('video');
+    videoElement.className = 'swift-streamer-player';
+    videoElement.setAttribute('playsinline', '');
+    videoElement.setAttribute('controls', '');
     
-    // Update source when it changes
-    playerRef.current.source = {
-      type: 'video',
-      sources: [
-        {
-          src,
-          type: 'video/mp4',
+    if (poster) {
+      videoElement.setAttribute('poster', poster);
+    }
+
+    // Add source
+    const sourceElement = document.createElement('source');
+    sourceElement.src = src;
+    sourceElement.type = 'video/mp4';
+    videoElement.appendChild(sourceElement);
+
+    // Initialize Swift Streamer
+    try {
+      const player = new window.SwiftStreamer(videoElement, {
+        autoplay: false,
+        theme: 'dark',
+        controls: true,
+        settings: true,
+        keyboard: true,
+        pip: true,
+        airplay: true,
+        volume: 100,
+        quality: {
+          default: 720,
+          options: [2160, 1440, 1080, 720, 480, 360, 240]
         },
-      ],
-    };
-  }, [src]);
+        speed: {
+          selected: 1,
+          options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+        }
+      });
+
+      // Clear container and append new player
+      containerRef.current.innerHTML = '';
+      containerRef.current.appendChild(videoElement);
+
+      return () => {
+        if (player && typeof player.destroy === 'function') {
+          player.destroy();
+        }
+      };
+    } catch (error) {
+      console.error('Failed to initialize Swift Streamer:', error);
+      // Fallback to native video player if Swift Streamer fails
+      containerRef.current.innerHTML = '';
+      containerRef.current.appendChild(videoElement);
+    }
+  }, [src, poster]);
 
   return (
-    <div className="relative w-full h-full bg-black">
-      <video
-        ref={videoRef}
-        className="w-full h-full"
-        poster={poster}
-        playsInline
-      >
-        <source src={src} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-    </div>
+    <div ref={containerRef} className="relative w-full h-full bg-black" />
   );
 };
