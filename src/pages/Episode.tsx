@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 import { getBookmarks, toggleBookmark } from '@/utils/bookmarks';
 import { EpisodeGrid } from '@/components/EpisodeGrid';
+import { VideoPlayer } from '@/components/VideoPlayer';
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();
@@ -266,11 +267,9 @@ const Episode = () => {
 
           <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden">
             {episode.stream ? (
-              <iframe
-                src={`https://vvvidk.vercel.app/?url=${episode.stream}&embed=true`}
-                className="w-full h-full"
-                allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              <VideoPlayer 
+                src={episode.stream} 
+                poster={episode.poster}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
