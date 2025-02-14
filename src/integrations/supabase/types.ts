@@ -57,6 +57,36 @@ export type Database = {
         }
         Relationships: []
       }
+      video_progress: {
+        Row: {
+          created_at: string
+          episode_id: string
+          id: string
+          ip_address: string
+          last_watched: string
+          progress: number
+          total_duration: number | null
+        }
+        Insert: {
+          created_at?: string
+          episode_id: string
+          id?: string
+          ip_address: string
+          last_watched?: string
+          progress: number
+          total_duration?: number | null
+        }
+        Update: {
+          created_at?: string
+          episode_id?: string
+          id?: string
+          ip_address?: string
+          last_watched?: string
+          progress?: number
+          total_duration?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

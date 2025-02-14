@@ -7,6 +7,7 @@ import { AnimeGrid } from '@/components/AnimeGrid';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Play } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
 
 interface ContinueWatchingItem {
   ID: string;
@@ -16,10 +17,9 @@ interface ContinueWatchingItem {
   totalDuration: number;
 }
 
-const PLAYBACK_STORAGE_KEY = 'video-playback-positions';
-
 const Index = () => {
   const [continueWatching, setContinueWatching] = useState<ContinueWatchingItem[]>([]);
+  const [userIp, setUserIp] = useState<string>('');
 
   const { data: homeData, isLoading } = useQuery({
     queryKey: ['home'],
@@ -27,39 +27,57 @@ const Index = () => {
   });
 
   useEffect(() => {
+    const fetchIp = async () => {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        setUserIp(data.ip);
+      } catch (error) {
+        console.error('Failed to fetch IP:', error);
+      }
+    };
+    fetchIp();
+  }, []);
+
+  useEffect(() => {
     const loadContinueWatching = async () => {
-      const savedPositions = JSON.parse(localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}');
-      const positions = Object.entries(savedPositions);
+      if (!userIp || !homeData) return;
 
-      if (positions.length === 0) return;
+      try {
+        const { data: progressData } = await supabase
+          .from('video_progress')
+          .select('*')
+          .eq('ip_address', userIp)
+          .order('last_watched', { ascending: false })
+          .limit(10);
 
-      const watchingItems = positions.map(([url, position]) => {
-        // Extract the episode ID from the URL
-        const match = url.match(/episode\/(.+)$/);
-        if (!match) return null;
+        if (!progressData) return;
 
-        const episodeId = match[1];
-        const episode = homeData?.["New release"]?.items.find(item => item.ID === episodeId) ||
-                       homeData?.Popular?.items.find(item => item.ID === episodeId);
+        const watchingItems = progressData.map(progress => {
+          const episode = homeData?.["New release"]?.items.find(item => item.ID === progress.episode_id) ||
+                         homeData?.Popular?.items.find(item => item.ID === progress.episode_id);
 
-        if (!episode) return null;
+          if (!episode) return null;
 
-        return {
-          ID: episode.ID,
-          name: episode.name,
-          img: episode.img,
-          progress: position as number,
-          totalDuration: 0 // We don't have this information stored yet
-        };
-      }).filter(Boolean) as ContinueWatchingItem[];
+          return {
+            ID: episode.ID,
+            name: episode.name,
+            img: episode.img,
+            progress: progress.progress,
+            totalDuration: progress.total_duration || 0
+          };
+        }).filter(Boolean) as ContinueWatchingItem[];
 
-      setContinueWatching(watchingItems.slice(0, 10)); // Show only the last 10 items
+        setContinueWatching(watchingItems);
+      } catch (error) {
+        console.error('Failed to load continue watching:', error);
+      }
     };
 
-    if (homeData) {
+    if (homeData && userIp) {
       loadContinueWatching();
     }
-  }, [homeData]);
+  }, [homeData, userIp]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">

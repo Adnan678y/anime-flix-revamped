@@ -3,6 +3,7 @@ import Hls from 'hls.js';
 import { Volume2, Volume1, VolumeX, Play, Pause, Settings, Loader2, RotateCcw, RotateCw, Maximize2, Minimize2, ChevronRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/lib/supabase';
 
 interface VideoPlayerProps {
   src?: string;
@@ -38,30 +39,54 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const [showDoubleTapIndicator, setShowDoubleTapIndicator] = useState<'left' | 'right' | null>(null);
   const savePlaybackPositionTimeout = useRef<number>();
 
-  const savePlaybackPosition = () => {
+  const savePlaybackPosition = async () => {
     if (!src || !videoRef.current) return;
     
-    const positions = JSON.parse(localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}');
-    positions[src] = videoRef.current.currentTime;
-    localStorage.setItem(PLAYBACK_STORAGE_KEY, JSON.stringify(positions));
+    try {
+      const { data: ipResponse } = await fetch('https://api.ipify.org?format=json').then(res => res.json());
+      const ipAddress = ipResponse.ip;
+      
+      await supabase
+        .from('video_progress')
+        .upsert({
+          ip_address: ipAddress,
+          episode_id: src.match(/episode\/(.+)$/)?.[1] || '',
+          progress: videoRef.current.currentTime,
+          total_duration: videoRef.current.duration,
+          last_watched: new Date().toISOString()
+        }, {
+          onConflict: 'ip_address,episode_id'
+        });
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
   };
 
   useEffect(() => {
     if (!src) return;
-    const savedPositions = JSON.parse(localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}');
-    const savedPosition = savedPositions[src];
     
-    if (savedPosition && videoRef.current) {
-      videoRef.current.currentTime = savedPosition;
-      setCurrentTime(savedPosition);
-    }
-  }, [src]);
-
-  useEffect(() => {
-    if (!src) return;
-
-    const interval = setInterval(savePlaybackPosition, 5000);
-    return () => clearInterval(interval);
+    const loadSavedPosition = async () => {
+      try {
+        const { data: ipResponse } = await fetch('https://api.ipify.org?format=json').then(res => res.json());
+        const ipAddress = ipResponse.ip;
+        
+        const { data: progressData } = await supabase
+          .from('video_progress')
+          .select('progress')
+          .eq('episode_id', src.match(/episode\/(.+)$/)?.[1] || '')
+          .eq('ip_address', ipAddress)
+          .maybeSingle();
+        
+        if (progressData && videoRef.current) {
+          videoRef.current.currentTime = progressData.progress;
+          setCurrentTime(progressData.progress);
+        }
+      } catch (error) {
+        console.error('Failed to load progress:', error);
+      }
+    };
+    
+    loadSavedPosition();
   }, [src]);
 
   useEffect(() => {
