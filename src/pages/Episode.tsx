@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 import { getBookmarks, toggleBookmark } from '@/utils/bookmarks';
 import { EpisodeGrid } from '@/components/EpisodeGrid';
-import { VideoPlayer } from '@/components/VideoPlayer';
+import VideoPlayer from '@/components/VideoPlayer';
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();

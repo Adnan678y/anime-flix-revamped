@@ -5,12 +5,13 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface VideoPlayerProps {
-  url: string;
+  src?: string;
+  poster?: string;
 }
 
 type SettingsMenuType = 'main' | 'playback' | 'quality';
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -36,7 +37,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !src) return;
 
     const handleWaiting = () => setIsBuffering(true);
     const handlePlaying = () => setIsBuffering(false);
@@ -49,7 +50,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
       });
       hlsRef.current = hls;
 
-      hls.loadSource(url);
+      hls.loadSource(src);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
@@ -78,7 +79,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
       };
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // For Safari which has built-in HLS support
-      video.src = url;
+      video.src = src;
       video.addEventListener('loadedmetadata', () => {
         setLoading(false);
       });
@@ -93,7 +94,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
       setError('HLS is not supported in your browser');
       setLoading(false);
     }
-  }, [url]);
+  }, [src]);
 
   useEffect(() => {
     const video = videoRef.current;
