@@ -76,6 +76,22 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
         video.removeEventListener('playing', handlePlaying);
         hls.destroy();
       };
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // For Safari which has built-in HLS support
+      video.src = url;
+      video.addEventListener('loadedmetadata', () => {
+        setLoading(false);
+      });
+      video.addEventListener('waiting', handleWaiting);
+      video.addEventListener('playing', handlePlaying);
+
+      return () => {
+        video.removeEventListener('waiting', handleWaiting);
+        video.removeEventListener('playing', handlePlaying);
+      };
+    } else {
+      setError('HLS is not supported in your browser');
+      setLoading(false);
     }
   }, [url]);
 
