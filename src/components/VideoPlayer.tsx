@@ -38,6 +38,38 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const [showDoubleTapIndicator, setShowDoubleTapIndicator] = useState<'left' | 'right' | null>(null);
   const savePlaybackPositionTimeout = useRef<number>();
 
+  const savePlaybackPosition = () => {
+    if (!src || !videoRef.current) return;
+    
+    const positions = JSON.parse(localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}');
+    positions[src] = videoRef.current.currentTime;
+    localStorage.setItem(PLAYBACK_STORAGE_KEY, JSON.stringify(positions));
+  };
+
+  useEffect(() => {
+    if (!src) return;
+    const savedPositions = JSON.parse(localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}');
+    const savedPosition = savedPositions[src];
+    
+    if (savedPosition && videoRef.current) {
+      videoRef.current.currentTime = savedPosition;
+      setCurrentTime(savedPosition);
+    }
+  }, [src]);
+
+  useEffect(() => {
+    if (!src) return;
+
+    const interval = setInterval(savePlaybackPosition, 5000);
+    return () => clearInterval(interval);
+  }, [src]);
+
+  useEffect(() => {
+    return () => {
+      savePlaybackPosition();
+    };
+  }, [src]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
