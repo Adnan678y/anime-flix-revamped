@@ -5,6 +5,8 @@ import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { AnimeGrid } from '@/components/AnimeGrid';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Play } from 'lucide-react';
 
 interface ContinueWatchingItem {
   ID: string;
