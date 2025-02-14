@@ -3,7 +3,7 @@ import Hls from 'hls.js';
 import { Volume2, Volume1, VolumeX, Play, Pause, Settings, Loader2, RotateCcw, RotateCw, Maximize2, Minimize2, ChevronRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoPlayerProps {
   src?: string;
