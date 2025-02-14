@@ -11,6 +11,8 @@ interface VideoPlayerProps {
 
 type SettingsMenuType = 'main' | 'playback' | 'quality';
 
+const PLAYBACK_STORAGE_KEY = 'video-playback-positions';
+
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,6 +36,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const [timePreview, setTimePreview] = useState<{ time: number; position: number } | null>(null);
   const doubleTapTimeoutRef = useRef<number>();
   const [showDoubleTapIndicator, setShowDoubleTapIndicator] = useState<'left' | 'right' | null>(null);
+  const savePlaybackPositionTimeout = useRef<number>();
 
   useEffect(() => {
     const video = videoRef.current;
@@ -103,6 +106,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
       setDuration(video.duration);
+      
+      // Save position when user manually seeks
+      if (savePlaybackPositionTimeout.current) {
+        window.clearTimeout(savePlaybackPositionTimeout.current);
+      }
+      savePlaybackPositionTimeout.current = window.setTimeout(savePlaybackPosition, 1000);
     };
 
     video.addEventListener('timeupdate', handleTimeUpdate);
@@ -356,6 +365,28 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
     setTimeout(() => setShowDoubleTapIndicator(null), 500);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    
+    // Show controls on any touch
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      window.clearTimeout(controlsTimeoutRef.current);
+    }
+    
+    controlsTimeoutRef.current = window.setTimeout(() => {
+      if (isPlaying) {
+        setShowControls(false);
+        setShowSettings(false);
+      }
+    }, 3000);
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
     const touch = e.changedTouches[0];
     const container = containerRef.current;
@@ -393,6 +424,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
         isFullscreen ? "h-screen" : "aspect-video"
       )}
       onMouseMove={handleMouseMove}
+      onTouchStart={handleTouchStart}
       onMouseLeave={() => {
         if (isPlaying) {
           setShowControls(false);
