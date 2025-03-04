@@ -7,7 +7,7 @@ import { AnimeGrid } from '@/components/AnimeGrid';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Play } from 'lucide-react';
-import { getContinueWatchingItems, updatePlaybackWithMetadata } from '@/utils/playback';
+import { getContinueWatchingItems, updatePlaybackWithMetadata, addTestVideo } from '@/utils/playback';
 
 interface ContinueWatchingItem {
   ID: string;
@@ -29,8 +29,14 @@ const Index = () => {
   useEffect(() => {
     const loadContinueWatching = () => {
       try {
+        console.log('Loading continue watching items...');
+        
+        // Uncomment the line below for development testing
+        // addTestVideo();
+        
         // Get continue watching items from our utility
         const watchingItems = getContinueWatchingItems();
+        console.log('Retrieved watching items:', watchingItems);
         
         // Update metadata for any items that might be missing it
         if (homeData) {
@@ -73,6 +79,8 @@ const Index = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  console.log('Current continue watching state:', continueWatching);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">
       <Navbar />
@@ -89,11 +97,17 @@ const Index = () => {
                       to={`/episode/${item.ID}`}
                       className="block relative aspect-video overflow-hidden rounded-lg"
                     >
-                      <img 
-                        src={item.img} 
-                        alt={item.name || 'Episode'}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
+                      {item.img ? (
+                        <img 
+                          src={item.img} 
+                          alt={item.name || 'Episode'}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-netflix-dark flex items-center justify-center">
+                          <Play className="w-12 h-12 text-white/50" />
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <Play className="w-12 h-12 text-white" />
                       </div>
@@ -106,7 +120,7 @@ const Index = () => {
                         />
                       </div>
                     </Link>
-                    <h3 className="mt-2 text-sm text-white/90 line-clamp-2">{item.name}</h3>
+                    <h3 className="mt-2 text-sm text-white/90 line-clamp-2">{item.name || 'Unknown Episode'}</h3>
                     {item.animeName && (
                       <p className="text-xs text-netflix-gray line-clamp-1">{item.animeName}</p>
                     )}

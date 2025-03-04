@@ -56,8 +56,9 @@ export const savePlaybackPosition = (
 export const getContinueWatchingItems = (limit: number = 10): Array<PlaybackPosition & { ID: string }> => {
   try {
     const positions = getPlaybackPositions();
+    console.log('Raw playback positions:', positions);
     
-    return Object.entries(positions)
+    const items = Object.entries(positions)
       .map(([episodeId, data]) => ({
         ID: episodeId,
         ...data
@@ -66,20 +67,21 @@ export const getContinueWatchingItems = (limit: number = 10): Array<PlaybackPosi
         new Date(b.lastWatched).getTime() - new Date(a.lastWatched).getTime()
       )
       .slice(0, limit)
+      // Relaxed filtering criteria - only filter out completed videos (95%+)
       .filter(item => 
-        // Only include items with more than 10 seconds progress
-        // and less than 95% complete
-        item.progress > 10 && 
         item.totalDuration > 0 &&
         (item.progress / item.totalDuration) < 0.95
       );
+    
+    console.log('Continue watching items after processing:', items);
+    return items;
   } catch (error) {
     console.error('Failed to get continue watching items:', error);
     return [];
   }
 };
 
-// Function to update playback position with metadata
+// Function to update playback with metadata
 export const updatePlaybackWithMetadata = (
   episodeId: string,
   metadata: { name?: string; img?: string; animeName?: string }
@@ -90,5 +92,25 @@ export const updatePlaybackWithMetadata = (
       ...position,
       ...metadata
     });
+  } else {
+    // Create a new playback position if it doesn't exist
+    savePlaybackPosition(episodeId, {
+      progress: 0,
+      totalDuration: 0,
+      lastWatched: new Date().toISOString(),
+      ...metadata
+    });
   }
+};
+
+// Helper function to add a test video for development purposes
+export const addTestVideo = () => {
+  savePlaybackPosition('test-episode-1', {
+    progress: 300,
+    totalDuration: 1800,
+    lastWatched: new Date().toISOString(),
+    name: 'Test Episode 1',
+    img: 'https://assets-prd.ignimgs.com/2021/10/14/demonslayer-art-1634244394273.png',
+    animeName: 'Test Anime'
+  });
 };
