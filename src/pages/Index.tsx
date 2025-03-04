@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
@@ -17,9 +16,10 @@ interface ContinueWatchingItem {
   totalDuration: number;
 }
 
+const PLAYBACK_STORAGE_KEY = 'video-playback-positions';
+
 const Index = () => {
   const [continueWatching, setContinueWatching] = useState<ContinueWatchingItem[]>([]);
-  const [userIp, setUserIp] = useState<string>('');
 
   const { data: homeData, isLoading } = useQuery({
     queryKey: ['home'],
@@ -27,46 +27,40 @@ const Index = () => {
   });
 
   useEffect(() => {
-    const fetchIp = async () => {
-      try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        setUserIp(data.ip);
-      } catch (error) {
-        console.error('Failed to fetch IP:', error);
-      }
-    };
-    fetchIp();
-  }, []);
-
-  useEffect(() => {
-    const loadContinueWatching = async () => {
-      if (!userIp || !homeData) return;
+    const loadContinueWatching = () => {
+      if (!homeData) return;
 
       try {
-        const { data: progressData } = await supabase
-          .from('video_progress')
-          .select('*')
-          .eq('ip_address', userIp)
-          .order('last_watched', { ascending: false })
-          .limit(10);
+        const positionsJSON = localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}';
+        const positions = JSON.parse(positionsJSON);
+        
+        const progressData = Object.entries(positions).map(([episodeId, data]) => ({
+          episode_id: episodeId,
+          progress: (data as any).progress,
+          total_duration: (data as any).totalDuration,
+          last_watched: (data as any).lastWatched
+        }));
+        
+        progressData.sort((a, b) => 
+          new Date(b.last_watched).getTime() - new Date(a.last_watched).getTime()
+        );
+        
+        const watchingItems = progressData
+          .slice(0, 10)
+          .map(progress => {
+            const episode = homeData?.["New release"]?.items.find(item => item.ID === progress.episode_id) ||
+                          homeData?.Popular?.items.find(item => item.ID === progress.episode_id);
 
-        if (!progressData) return;
+            if (!episode) return null;
 
-        const watchingItems = progressData.map(progress => {
-          const episode = homeData?.["New release"]?.items.find(item => item.ID === progress.episode_id) ||
-                         homeData?.Popular?.items.find(item => item.ID === progress.episode_id);
-
-          if (!episode) return null;
-
-          return {
-            ID: episode.ID,
-            name: episode.name,
-            img: episode.img,
-            progress: progress.progress,
-            totalDuration: progress.total_duration || 0
-          };
-        }).filter(Boolean) as ContinueWatchingItem[];
+            return {
+              ID: episode.ID,
+              name: episode.name,
+              img: episode.img,
+              progress: progress.progress,
+              totalDuration: progress.total_duration || 0
+            };
+          }).filter(Boolean) as ContinueWatchingItem[];
 
         setContinueWatching(watchingItems);
       } catch (error) {
@@ -74,10 +68,10 @@ const Index = () => {
       }
     };
 
-    if (homeData && userIp) {
+    if (homeData) {
       loadContinueWatching();
     }
-  }, [homeData, userIp]);
+  }, [homeData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">

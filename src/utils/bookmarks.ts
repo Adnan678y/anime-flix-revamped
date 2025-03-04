@@ -1,27 +1,24 @@
 
-// Function to get bookmarks from cookie
+// Function to get bookmarks from localStorage
 export const getBookmarks = (): number[] => {
-  const bookmarksCookie = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('bookmarks='));
-  
-  if (bookmarksCookie) {
-    try {
-      return JSON.parse(decodeURIComponent(bookmarksCookie.split('=')[1]));
-    } catch {
-      return [];
+  try {
+    const bookmarks = localStorage.getItem('bookmarks');
+    if (bookmarks) {
+      return JSON.parse(bookmarks);
     }
+  } catch (error) {
+    console.error('Error getting bookmarks:', error);
   }
   return [];
 };
 
-// Function to save bookmarks to cookie
+// Function to save bookmarks to localStorage
 export const saveBookmarks = (bookmarks: number[]) => {
-  // Set cookie to expire in 30 days
-  const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + 30);
-  
-  document.cookie = `bookmarks=${encodeURIComponent(JSON.stringify(bookmarks))}; expires=${expiryDate.toUTCString()}; path=/`;
+  try {
+    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+  } catch (error) {
+    console.error('Error saving bookmarks:', error);
+  }
 };
 
 // Function to toggle bookmark
@@ -38,3 +35,7 @@ export const toggleBookmark = (episodeId: number): boolean => {
   }
 };
 
+// Function to check if an episode is bookmarked
+export const isBookmarked = (episodeId: number): boolean => {
+  return getBookmarks().includes(episodeId);
+};

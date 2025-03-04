@@ -6,32 +6,17 @@ import { ArrowLeft, Play, Bookmark, ThumbsUp, ThumbsDown, Share2, MessageSquare 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
-import { getBookmarks, toggleBookmark } from '@/utils/bookmarks';
+import { getBookmarks, toggleBookmark, isBookmarked } from '@/utils/bookmarks';
 import { EpisodeGrid } from '@/components/EpisodeGrid';
 import VideoPlayer from '@/components/VideoPlayer';
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
   const [userInteraction, setUserInteraction] = useState<'like' | 'dislike' | null>(null);
-  const [userIp, setUserIp] = useState<string>('');
   const [comment, setComment] = useState('');
   const [showComments, setShowComments] = useState(false);
-
-  useEffect(() => {
-    const fetchIp = async () => {
-      try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        setUserIp(data.ip);
-      } catch (error) {
-        console.error('Failed to fetch IP:', error);
-        setUserIp('0.0.0.0'); // Fallback IP
-      }
-    };
-    fetchIp();
-  }, []);
 
   const { data: episode, isLoading: isLoadingEpisode } = useQuery({
     queryKey: ['episode', id],
@@ -63,31 +48,27 @@ const Episode = () => {
     enabled: !!id,
   });
 
-  const { data: userCurrentInteraction } = useQuery({
-    queryKey: ['user-interaction', id, userIp],
-    queryFn: async () => {
-      if (!userIp) return null;
-      const { data } = await supabase
-        .from('episodes_interactions')
-        .select('interaction_type')
-        .eq('episode_id', id)
-        .eq('ip_address', userIp)
-        .maybeSingle();
-      return data?.interaction_type as 'like' | 'dislike' | null;
-    },
-    enabled: !!id && !!userIp,
-  });
-
   useEffect(() => {
-    setUserInteraction(userCurrentInteraction || null);
-  }, [userCurrentInteraction]);
+    const getUserInteraction = () => {
+      try {
+        const interactionsJSON = localStorage.getItem('user-interactions') || '{}';
+        const interactions = JSON.parse(interactionsJSON);
+        return interactions[id || ''] || null;
+      } catch (error) {
+        console.error('Error getting user interaction:', error);
+        return null;
+      }
+    };
+    
+    setUserInteraction(getUserInteraction());
+  }, [id]);
 
   const likes = interactions?.filter(i => i.interaction_type === 'like').length || 0;
   const dislikes = interactions?.filter(i => i.interaction_type === 'dislike').length || 0;
 
   useEffect(() => {
     if (episode?.id) {
-      setIsBookmarked(getBookmarks().includes(episode.id));
+      setBookmarked(isBookmarked(episode.id));
     }
   }, [episode?.id]);
 
@@ -95,57 +76,28 @@ const Episode = () => {
     if (!episode) return;
     
     const newIsBookmarked = toggleBookmark(episode.id);
-    setIsBookmarked(newIsBookmarked);
+    setBookmarked(newIsBookmarked);
     toast.success(newIsBookmarked ? 'Bookmark added' : 'Bookmark removed');
   };
 
   const handleInteraction = async (type: 'like' | 'dislike') => {
-    if (!userIp) {
-      toast.error('Unable to process your interaction at this time');
-      return;
-    }
-
+    if (!id) return;
+    
     try {
+      const interactionsJSON = localStorage.getItem('user-interactions') || '{}';
+      const interactions = JSON.parse(interactionsJSON);
+      
       if (userInteraction === type) {
-        // Remove interaction
-        await supabase
-          .from('episodes_interactions')
-          .delete()
-          .eq('episode_id', id)
-          .eq('ip_address', userIp);
+        delete interactions[id];
         setUserInteraction(null);
       } else {
-        // Check if there's an existing interaction
-        const { data: existing } = await supabase
-          .from('episodes_interactions')
-          .select()
-          .eq('episode_id', id)
-          .eq('ip_address', userIp)
-          .maybeSingle();
-
-        if (existing) {
-          // Update existing interaction
-          await supabase
-            .from('episodes_interactions')
-            .update({ interaction_type: type })
-            .eq('episode_id', id)
-            .eq('ip_address', userIp);
-        } else {
-          // Insert new interaction
-          await supabase
-            .from('episodes_interactions')
-            .insert({
-              episode_id: id,
-              interaction_type: type,
-              ip_address: userIp
-            });
-        }
+        interactions[id] = type;
         setUserInteraction(type);
       }
       
-      // Refresh interactions data
+      localStorage.setItem('user-interactions', JSON.stringify(interactions));
+      
       queryClient.invalidateQueries({ queryKey: ['episode-interactions', id] });
-      queryClient.invalidateQueries({ queryKey: ['user-interaction', id, userIp] });
       toast.success('Thanks for your feedback!');
     } catch (error) {
       console.error('Interaction error:', error);
@@ -179,24 +131,33 @@ const Episode = () => {
         .order('created_at', { ascending: false });
       return data || [];
     },
-    enabled: !!id && showComments, // Only fetch when comments are visible
+    enabled: !!id && showComments,
   });
 
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim() || !userIp) {
+    if (!comment.trim() || !id) {
       toast.error('Unable to post comment at this time');
       return;
     }
     
     try {
-      await supabase
-        .from('episode_comments')
-        .insert({
-          episode_id: id,
-          comment_text: comment,
-          ip_address: userIp
-        });
+      const commentsJSON = localStorage.getItem('user-comments') || '{}';
+      const userComments = JSON.parse(commentsJSON);
+      
+      if (!userComments[id]) {
+        userComments[id] = [];
+      }
+      
+      const newComment = {
+        id: Date.now().toString(),
+        episode_id: id,
+        comment_text: comment,
+        created_at: new Date().toISOString()
+      };
+      
+      userComments[id].unshift(newComment);
+      localStorage.setItem('user-comments', JSON.stringify(userComments));
       
       setComment('');
       queryClient.invalidateQueries({ queryKey: ['episode-comments', id] });
@@ -249,13 +210,13 @@ const Episode = () => {
             <button
               onClick={toggleBookmarkHandler}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-                isBookmarked 
+                bookmarked 
                 ? 'bg-netflix-red text-white' 
                 : 'bg-netflix-dark text-netflix-gray hover:text-white'
               }`}
             >
-              <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
-              <span>{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
+              <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
+              <span>{bookmarked ? 'Bookmarked' : 'Bookmark'}</span>
             </button>
           </div>
 

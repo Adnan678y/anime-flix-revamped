@@ -39,24 +39,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const [showDoubleTapIndicator, setShowDoubleTapIndicator] = useState<'left' | 'right' | null>(null);
   const savePlaybackPositionTimeout = useRef<number>();
 
-  const savePlaybackPosition = async () => {
+  const savePlaybackPosition = () => {
     if (!src || !videoRef.current) return;
     
     try {
-      const { data: ipResponse } = await fetch('https://api.ipify.org?format=json').then(res => res.json());
-      const ipAddress = ipResponse.ip;
+      const episodeId = src.match(/episode\/(.+)$/)?.[1] || '';
+      if (!episodeId) return;
+
+      // Get existing positions from localStorage
+      const positionsJSON = localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}';
+      const positions = JSON.parse(positionsJSON);
       
-      await supabase
-        .from('video_progress')
-        .upsert({
-          ip_address: ipAddress,
-          episode_id: src.match(/episode\/(.+)$/)?.[1] || '',
-          progress: videoRef.current.currentTime,
-          total_duration: videoRef.current.duration,
-          last_watched: new Date().toISOString()
-        }, {
-          onConflict: 'ip_address,episode_id'
-        });
+      // Update the position for this episode
+      positions[episodeId] = {
+        progress: videoRef.current.currentTime,
+        totalDuration: videoRef.current.duration,
+        lastWatched: new Date().toISOString()
+      };
+      
+      // Save back to localStorage
+      localStorage.setItem(PLAYBACK_STORAGE_KEY, JSON.stringify(positions));
     } catch (error) {
       console.error('Failed to save progress:', error);
     }
@@ -65,21 +67,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   useEffect(() => {
     if (!src) return;
     
-    const loadSavedPosition = async () => {
+    const loadSavedPosition = () => {
       try {
-        const { data: ipResponse } = await fetch('https://api.ipify.org?format=json').then(res => res.json());
-        const ipAddress = ipResponse.ip;
+        const episodeId = src.match(/episode\/(.+)$/)?.[1] || '';
+        if (!episodeId) return;
+
+        // Get positions from localStorage
+        const positionsJSON = localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}';
+        const positions = JSON.parse(positionsJSON);
         
-        const { data: progressData } = await supabase
-          .from('video_progress')
-          .select('progress')
-          .eq('episode_id', src.match(/episode\/(.+)$/)?.[1] || '')
-          .eq('ip_address', ipAddress)
-          .maybeSingle();
-        
-        if (progressData && videoRef.current) {
-          videoRef.current.currentTime = progressData.progress;
-          setCurrentTime(progressData.progress);
+        if (positions[episodeId] && videoRef.current) {
+          videoRef.current.currentTime = positions[episodeId].progress;
+          setCurrentTime(positions[episodeId].progress);
         }
       } catch (error) {
         console.error('Failed to load progress:', error);

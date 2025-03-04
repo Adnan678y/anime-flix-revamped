@@ -10,21 +10,31 @@ import { Bookmark, Play } from 'lucide-react';
 const MyList = () => {
   const [bookmarkedIds, setBookmarkedIds] = useState<number[]>([]);
 
+  // Refresh bookmarks whenever the component is mounted
   useEffect(() => {
     setBookmarkedIds(getBookmarks());
+    
+    // Also set up a listener for storage changes to update the UI if bookmarks change
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'bookmarks') {
+        setBookmarkedIds(getBookmarks());
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const { data: episodes, isLoading } = useQuery({
     queryKey: ['bookmarked-episodes', bookmarkedIds],
     queryFn: async () => {
+      if (bookmarkedIds.length === 0) return [];
+      
       const promises = bookmarkedIds.map(id => api.getEpisode(id.toString()));
       const results = await Promise.all(promises.map(p => p.catch(() => null)));
       return results.filter(episode => episode !== null);
     },
     enabled: bookmarkedIds.length > 0,
-    meta: {
-      onError: () => console.error('Failed to fetch bookmarked episodes')
-    }
   });
 
   if (isLoading) {
