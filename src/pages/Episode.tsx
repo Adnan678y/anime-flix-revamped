@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -207,17 +208,6 @@ const Episode = () => {
               <ArrowLeft className="w-5 h-5" />
               <span>Back to {episode.animeName}</span>
             </Link>
-            <button
-              onClick={toggleBookmarkHandler}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
-                bookmarked 
-                ? 'bg-netflix-red text-white' 
-                : 'bg-netflix-dark text-netflix-gray hover:text-white'
-              }`}
-            >
-              <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
-              <span>{bookmarked ? 'Bookmarked' : 'Bookmark'}</span>
-            </button>
           </div>
 
           <div className="bg-netflix-dark/50 p-4 rounded-md mb-4">
@@ -271,6 +261,17 @@ const Episode = () => {
             >
               <Share2 className="w-5 h-5" />
               <span>Share</span>
+            </button>
+            <button
+              onClick={toggleBookmarkHandler}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                bookmarked 
+                ? 'bg-netflix-red text-white' 
+                : 'bg-netflix-dark text-netflix-gray hover:text-white'
+              }`}
+            >
+              <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
+              <span>{bookmarked ? 'Bookmarked' : 'Bookmark'}</span>
             </button>
           </div>
 
