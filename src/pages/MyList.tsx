@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom';
 import { Bookmark, Play } from 'lucide-react';
 
 const MyList = () => {
-  const [bookmarkedIds, setBookmarkedIds] = useState<number[]>([]);
+  // Change the type from number[] to string[] to match what getBookmarks() returns
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
 
   // Refresh bookmarks whenever the component is mounted
   useEffect(() => {
@@ -30,7 +31,7 @@ const MyList = () => {
     queryFn: async () => {
       if (bookmarkedIds.length === 0) return [];
       
-      const promises = bookmarkedIds.map(id => api.getEpisode(id.toString()));
+      const promises = bookmarkedIds.map(id => api.getEpisode(id));
       const results = await Promise.all(promises.map(p => p.catch(() => null)));
       return results.filter(episode => episode !== null);
     },
