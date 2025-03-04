@@ -4,6 +4,7 @@ import { Volume2, Volume1, VolumeX, Play, Pause, Settings, Loader2, RotateCcw, R
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from "@/integrations/supabase/client";
+import { getPlaybackPosition, savePlaybackPosition } from '@/utils/playback';
 
 interface VideoPlayerProps {
   src?: string;
@@ -39,26 +40,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const [showDoubleTapIndicator, setShowDoubleTapIndicator] = useState<'left' | 'right' | null>(null);
   const savePlaybackPositionTimeout = useRef<number>();
 
-  const savePlaybackPosition = () => {
+  const saveCurrentPlaybackPosition = () => {
     if (!src || !videoRef.current) return;
     
     try {
       const episodeId = src.match(/episode\/(.+)$/)?.[1] || '';
       if (!episodeId) return;
 
-      // Get existing positions from localStorage
-      const positionsJSON = localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}';
-      const positions = JSON.parse(positionsJSON);
-      
-      // Update the position for this episode
-      positions[episodeId] = {
+      savePlaybackPosition(episodeId, {
         progress: videoRef.current.currentTime,
-        totalDuration: videoRef.current.duration,
+        totalDuration: videoRef.current.duration || 0,
         lastWatched: new Date().toISOString()
-      };
-      
-      // Save back to localStorage
-      localStorage.setItem(PLAYBACK_STORAGE_KEY, JSON.stringify(positions));
+      });
     } catch (error) {
       console.error('Failed to save progress:', error);
     }
@@ -70,15 +63,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
     const loadSavedPosition = () => {
       try {
         const episodeId = src.match(/episode\/(.+)$/)?.[1] || '';
-        if (!episodeId) return;
+        if (!episodeId || !videoRef.current) return;
 
-        // Get positions from localStorage
-        const positionsJSON = localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}';
-        const positions = JSON.parse(positionsJSON);
-        
-        if (positions[episodeId] && videoRef.current) {
-          videoRef.current.currentTime = positions[episodeId].progress;
-          setCurrentTime(positions[episodeId].progress);
+        const savedPosition = getPlaybackPosition(episodeId);
+        if (savedPosition) {
+          videoRef.current.currentTime = savedPosition.progress;
+          setCurrentTime(savedPosition.progress);
         }
       } catch (error) {
         console.error('Failed to load progress:', error);
@@ -90,7 +80,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
 
   useEffect(() => {
     return () => {
-      savePlaybackPosition();
+      saveCurrentPlaybackPosition();
     };
   }, [src]);
 
@@ -167,7 +157,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
       if (savePlaybackPositionTimeout.current) {
         window.clearTimeout(savePlaybackPositionTimeout.current);
       }
-      savePlaybackPositionTimeout.current = window.setTimeout(savePlaybackPosition, 1000);
+      savePlaybackPositionTimeout.current = window.setTimeout(saveCurrentPlaybackPosition, 1000);
     };
 
     video.addEventListener('timeupdate', handleTimeUpdate);

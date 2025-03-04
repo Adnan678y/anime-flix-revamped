@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
@@ -6,17 +7,16 @@ import { AnimeGrid } from '@/components/AnimeGrid';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Play } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
+import { getContinueWatchingItems, updatePlaybackWithMetadata } from '@/utils/playback';
 
 interface ContinueWatchingItem {
   ID: string;
-  name: string;
-  img: string;
+  name?: string;
+  img?: string;
   progress: number;
   totalDuration: number;
+  animeName?: string;
 }
-
-const PLAYBACK_STORAGE_KEY = 'video-playback-positions';
 
 const Index = () => {
   const [continueWatching, setContinueWatching] = useState<ContinueWatchingItem[]>([]);
@@ -31,37 +31,25 @@ const Index = () => {
       if (!homeData) return;
 
       try {
-        const positionsJSON = localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}';
-        const positions = JSON.parse(positionsJSON);
+        // Get continue watching items from our utility
+        const watchingItems = getContinueWatchingItems();
         
-        const progressData = Object.entries(positions).map(([episodeId, data]) => ({
-          episode_id: episodeId,
-          progress: (data as any).progress,
-          total_duration: (data as any).totalDuration,
-          last_watched: (data as any).lastWatched
-        }));
-        
-        progressData.sort((a, b) => 
-          new Date(b.last_watched).getTime() - new Date(a.last_watched).getTime()
-        );
-        
-        const watchingItems = progressData
-          .slice(0, 10)
-          .map(progress => {
-            const episode = homeData?.["New release"]?.items.find(item => item.ID === progress.episode_id) ||
-                          homeData?.Popular?.items.find(item => item.ID === progress.episode_id);
-
-            if (!episode) return null;
-
-            return {
-              ID: episode.ID,
+        // Update metadata for any items that might be missing it
+        watchingItems.forEach(item => {
+          const episode = homeData?.["New release"]?.items.find(ep => ep.ID === item.ID) ||
+                        homeData?.Popular?.items.find(ep => ep.ID === item.ID);
+          
+          if (episode && (!item.name || !item.img)) {
+            // Update the metadata if it's missing
+            updatePlaybackWithMetadata(item.ID, {
               name: episode.name,
               img: episode.img,
-              progress: progress.progress,
-              totalDuration: progress.total_duration || 0
-            };
-          }).filter(Boolean) as ContinueWatchingItem[];
-
+              animeName: episode.animeName
+            });
+          }
+        });
+        
+        // Set the continue watching items
         setContinueWatching(watchingItems);
       } catch (error) {
         console.error('Failed to load continue watching:', error);
@@ -71,6 +59,20 @@ const Index = () => {
     if (homeData) {
       loadContinueWatching();
     }
+  }, [homeData]);
+
+  // Setup a storage event listener to update the continue watching section
+  // if playback positions are updated in another tab
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'video-playback-positions' && homeData) {
+        const watchingItems = getContinueWatchingItems();
+        setContinueWatching(watchingItems);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [homeData]);
 
   return (
@@ -91,7 +93,7 @@ const Index = () => {
                     >
                       <img 
                         src={item.img} 
-                        alt={item.name}
+                        alt={item.name || 'Episode'}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -107,6 +109,9 @@ const Index = () => {
                       </div>
                     </Link>
                     <h3 className="mt-2 text-sm text-white/90 line-clamp-2">{item.name}</h3>
+                    {item.animeName && (
+                      <p className="text-xs text-netflix-gray line-clamp-1">{item.animeName}</p>
+                    )}
                   </div>
                 ))}
               </div>
