@@ -28,26 +28,26 @@ const Index = () => {
 
   useEffect(() => {
     const loadContinueWatching = () => {
-      if (!homeData) return;
-
       try {
         // Get continue watching items from our utility
         const watchingItems = getContinueWatchingItems();
         
         // Update metadata for any items that might be missing it
-        watchingItems.forEach(item => {
-          const episode = homeData?.["New release"]?.items.find(ep => ep.ID === item.ID) ||
-                        homeData?.Popular?.items.find(ep => ep.ID === item.ID);
-          
-          if (episode && (!item.name || !item.img)) {
-            // Update the metadata if it's missing
-            updatePlaybackWithMetadata(item.ID, {
-              name: episode.name,
-              img: episode.img,
-              animeName: episode.animeName
-            });
-          }
-        });
+        if (homeData) {
+          watchingItems.forEach(item => {
+            const episode = homeData?.["New release"]?.items.find(ep => ep.ID === item.ID) ||
+                          homeData?.Popular?.items.find(ep => ep.ID === item.ID);
+            
+            if (episode && (!item.name || !item.img)) {
+              // Update the metadata if it's missing
+              updatePlaybackWithMetadata(item.ID, {
+                name: episode.name,
+                img: episode.img,
+                animeName: episode.animeName
+              });
+            }
+          });
+        }
         
         // Set the continue watching items
         setContinueWatching(watchingItems);
@@ -56,16 +56,14 @@ const Index = () => {
       }
     };
 
-    if (homeData) {
-      loadContinueWatching();
-    }
+    loadContinueWatching();
   }, [homeData]);
 
   // Setup a storage event listener to update the continue watching section
   // if playback positions are updated in another tab
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'video-playback-positions' && homeData) {
+      if (e.key === 'video-playback-positions') {
         const watchingItems = getContinueWatchingItems();
         setContinueWatching(watchingItems);
       }
@@ -73,7 +71,7 @@ const Index = () => {
     
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [homeData]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">

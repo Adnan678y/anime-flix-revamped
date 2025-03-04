@@ -199,7 +199,7 @@ const Episode = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <Link
               to={`/anime/${episode.animeId}`}
               className="flex items-center gap-2 text-netflix-gray hover:text-white transition-colors"
@@ -220,13 +220,13 @@ const Episode = () => {
             </button>
           </div>
 
-          <div className="bg-netflix-dark/50 p-4 rounded-md">
+          <div className="bg-netflix-dark/50 p-4 rounded-md mb-4">
             <div className="text-netflix-gray">
               You are watching <span className="text-white font-semibold">{episode.name}</span>
             </div>
           </div>
 
-          <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden">
+          <div className="relative aspect-video bg-netflix-dark rounded-lg overflow-hidden mb-4">
             {episode.stream ? (
               <VideoPlayer 
                 src={episode.stream} 

@@ -70,7 +70,8 @@ export const getContinueWatchingItems = (limit: number = 10): Array<PlaybackPosi
         // Only include items with more than 10 seconds progress
         // and less than 95% complete
         item.progress > 10 && 
-        (item.totalDuration === 0 || (item.progress / item.totalDuration) < 0.95)
+        item.totalDuration > 0 &&
+        (item.progress / item.totalDuration) < 0.95
       );
   } catch (error) {
     console.error('Failed to get continue watching items:', error);

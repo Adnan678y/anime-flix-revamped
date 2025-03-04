@@ -1,6 +1,6 @@
 
 // Function to get bookmarks from localStorage
-export const getBookmarks = (): number[] => {
+export const getBookmarks = (): string[] => {
   try {
     const bookmarks = localStorage.getItem('bookmarks');
     if (bookmarks) {
@@ -13,7 +13,7 @@ export const getBookmarks = (): number[] => {
 };
 
 // Function to save bookmarks to localStorage
-export const saveBookmarks = (bookmarks: number[]) => {
+export const saveBookmarks = (bookmarks: string[]) => {
   try {
     localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
   } catch (error) {
@@ -22,7 +22,7 @@ export const saveBookmarks = (bookmarks: number[]) => {
 };
 
 // Function to toggle bookmark
-export const toggleBookmark = (episodeId: number): boolean => {
+export const toggleBookmark = (episodeId: string): boolean => {
   const bookmarks = getBookmarks();
   const isBookmarked = bookmarks.includes(episodeId);
   
@@ -36,6 +36,6 @@ export const toggleBookmark = (episodeId: number): boolean => {
 };
 
 // Function to check if an episode is bookmarked
-export const isBookmarked = (episodeId: number): boolean => {
+export const isBookmarked = (episodeId: string): boolean => {
   return getBookmarks().includes(episodeId);
 };
