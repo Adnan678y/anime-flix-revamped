@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -10,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getBookmarks, toggleBookmark, isBookmarked } from '@/utils/bookmarks';
 import { EpisodeGrid } from '@/components/EpisodeGrid';
 import VideoPlayer from '@/components/VideoPlayer';
+import { updatePlaybackWithMetadata } from '@/utils/playback';
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +19,9 @@ const Episode = () => {
   const [comment, setComment] = useState('');
   const [showComments, setShowComments] = useState(false);
 
+  const DEFAULT_ANIME_NAME = "Attack on Titan";
+  const DEFAULT_THUMBNAIL = "https://cdn.myanimelist.net/images/anime/10/47347.jpg";
+
   const { data: episode, isLoading: isLoadingEpisode } = useQuery({
     queryKey: ['episode', id],
     queryFn: () => api.getEpisode(id!),
@@ -27,6 +30,18 @@ const Episode = () => {
       onError: () => toast.error('Failed to load episode')
     }
   });
+
+  useEffect(() => {
+    if (id) {
+      const metadata = {
+        name: episode?.name || `Episode ${id}`,
+        img: episode?.poster || DEFAULT_THUMBNAIL,
+        animeName: episode?.animeName || DEFAULT_ANIME_NAME
+      };
+      
+      updatePlaybackWithMetadata(id, metadata);
+    }
+  }, [id, episode]);
 
   const { data: otherEpisodes, isLoading: isLoadingOtherEpisodes } = useQuery({
     queryKey: ['anime-episodes', episode?.animeId],
@@ -50,28 +65,13 @@ const Episode = () => {
   });
 
   useEffect(() => {
-    const getUserInteraction = () => {
-      try {
-        const interactionsJSON = localStorage.getItem('user-interactions') || '{}';
-        const interactions = JSON.parse(interactionsJSON);
-        return interactions[id || ''] || null;
-      } catch (error) {
-        console.error('Error getting user interaction:', error);
-        return null;
-      }
-    };
-    
-    setUserInteraction(getUserInteraction());
-  }, [id]);
-
-  const likes = interactions?.filter(i => i.interaction_type === 'like').length || 0;
-  const dislikes = interactions?.filter(i => i.interaction_type === 'dislike').length || 0;
-
-  useEffect(() => {
     if (episode?.id) {
       setBookmarked(isBookmarked(episode.id));
     }
   }, [episode?.id]);
+
+  const likes = interactions?.filter(i => i.interaction_type === 'like').length || 0;
+  const dislikes = interactions?.filter(i => i.interaction_type === 'dislike').length || 0;
 
   const toggleBookmarkHandler = () => {
     if (!episode) return;
@@ -190,6 +190,15 @@ const Episode = () => {
         <Navbar />
         <div className="container mx-auto px-4 py-32 text-center">
           <h1 className="text-2xl text-white">Episode not found</h1>
+          <div className="mt-8">
+            <div className="aspect-video max-w-3xl mx-auto bg-netflix-dark rounded-lg overflow-hidden">
+              <VideoPlayer 
+                src="" 
+                poster={DEFAULT_THUMBNAIL}
+              />
+            </div>
+            <h2 className="text-xl mt-4 text-white">{DEFAULT_ANIME_NAME}</h2>
+          </div>
         </div>
       </div>
     );
@@ -206,7 +215,7 @@ const Episode = () => {
               className="flex items-center gap-2 text-netflix-gray hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span>Back to {episode.animeName}</span>
+              <span>Back to {episode.animeName || DEFAULT_ANIME_NAME}</span>
             </Link>
           </div>
 
@@ -220,7 +229,7 @@ const Episode = () => {
             {episode.stream ? (
               <VideoPlayer 
                 src={episode.stream} 
-                poster={episode.poster}
+                poster={episode.poster || DEFAULT_THUMBNAIL}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -232,10 +241,10 @@ const Episode = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <button
               onClick={() => handleInteraction('like')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                 userInteraction === 'like'
                   ? 'bg-green-600 text-white'
                   : 'bg-netflix-dark text-netflix-gray hover:text-white'
@@ -246,7 +255,7 @@ const Episode = () => {
             </button>
             <button
               onClick={() => handleInteraction('dislike')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                 userInteraction === 'dislike'
                   ? 'bg-red-600 text-white'
                   : 'bg-netflix-dark text-netflix-gray hover:text-white'
@@ -257,7 +266,7 @@ const Episode = () => {
             </button>
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-netflix-dark text-netflix-gray hover:text-white"
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-netflix-dark text-netflix-gray hover:text-white transition-colors"
             >
               <Share2 className="w-5 h-5" />
               <span>Share</span>
@@ -288,7 +297,7 @@ const Episode = () => {
           <div className="space-y-4">
             <button
               onClick={() => setShowComments(!showComments)}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-netflix-dark text-netflix-gray hover:text-white w-full justify-between"
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-netflix-dark text-netflix-gray hover:text-white w-full justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
