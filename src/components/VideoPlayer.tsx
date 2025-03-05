@@ -127,7 +127,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
         hls.destroy();
       };
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // For Safari which has built-in HLS support
       video.src = src;
       video.addEventListener('loadedmetadata', () => {
         setLoading(false);
@@ -153,7 +152,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
       setCurrentTime(video.currentTime);
       setDuration(video.duration);
       
-      // Save position when user manually seeks
       if (savePlaybackPositionTimeout.current) {
         window.clearTimeout(savePlaybackPositionTimeout.current);
       }
@@ -178,7 +176,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
     if (!video) return;
 
     if (video.paused) {
-      video.play();
+      video.play().catch(error => {
+        console.error('Failed to play video:', error);
+      });
       setIsPlaying(true);
     } else {
       video.pause();
@@ -419,7 +419,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
     const rect = container.getBoundingClientRect();
     const x = touch.clientX - rect.left;
     
-    // Show controls on any touch
     setShowControls(true);
     if (controlsTimeoutRef.current) {
       window.clearTimeout(controlsTimeoutRef.current);
@@ -431,6 +430,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
         setShowSettings(false);
       }
     }, 3000);
+  };
+
+  const handleVideoClick = (e: React.MouseEvent) => {
+    if (e.target === videoRef.current) {
+      handlePlayPause();
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -449,7 +454,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
     } else {
       doubleTapTimeoutRef.current = window.setTimeout(() => {
         doubleTapTimeoutRef.current = undefined;
-        handlePlayPause();
+        if (e.target === videoRef.current) {
+          handlePlayPause();
+        }
       }, 300);
     }
   };
@@ -494,7 +501,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
         ref={videoRef}
         className="w-full h-full cursor-pointer"
         playsInline
-        onClick={handlePlayPause}
+        onClick={handleVideoClick}
+        poster={poster}
       />
 
       <div className={cn(
@@ -519,7 +527,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
               onMouseMove={handleMouseMoveProgress}
               onMouseLeave={handleMouseLeaveProgress}
             >
-              {/* Buffered ranges */}
               {getBufferedRanges().map((range, index) => {
                 const start = (range.start / duration) * 100;
                 const end = (range.end / duration) * 100;
@@ -536,7 +543,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
                 );
               })}
               
-              {/* Progress bar */}
               <div 
                 className="absolute left-0 top-0 bottom-0 bg-[#ea384c] rounded-full transition-all"
                 style={{ width: `${(currentTime / duration) * 100}%` }}
@@ -544,11 +550,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#ea384c] rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg" />
               </div>
 
-              {/* Hover effect */}
               <div className="absolute inset-0 w-full h-full opacity-0 group-hover/progress:opacity-20 bg-gradient-to-r from-white/0 via-white to-white/0 transition-opacity" />
             </div>
 
-            {/* Timestamps */}
             <div className="flex justify-between items-center mt-1 text-xs text-white/60">
               <span>{formatTime(currentTime)}</span>
               <span>-{formatTime(duration - currentTime)}</span>
