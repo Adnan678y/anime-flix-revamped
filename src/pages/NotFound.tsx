@@ -15,7 +15,7 @@ const NotFound = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A1A2E] to-[#16213E] flex items-center justify-center p-4">
       <div className="max-w-2xl w-full text-center space-y-6">
-        <h1 className="text-8xl font-bold bg-gradient-to-r from-[#ff4d4d] via-[#ff6b6b] to-[#ff8080] text-transparent bg-clip-text animate-pulse">
+        <h1 className="text-8xl font-bold bg-gradient-to-r from-[#E50914] via-[#ff6b6b] to-[#ff8080] text-transparent bg-clip-text animate-pulse">
           404
         </h1>
         <div className="space-y-4">
@@ -25,7 +25,7 @@ const NotFound = () => {
           </p>
         </div>
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#ff4d4d]/20 to-[#ff8080]/20 blur-xl" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#E50914]/20 to-[#ff8080]/20 blur-xl" />
           <a
             href="/"
             className="relative inline-flex items-center px-6 py-3 text-lg font-medium text-white bg-gradient-to-r from-[#E50914] to-[#ff4d4d] rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#E50914]/30"

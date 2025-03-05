@@ -10,6 +10,8 @@ import Search from "./pages/Search";
 import Episode from "./pages/Episode";
 import MyList from "./pages/MyList";
 import NotFound from "./pages/NotFound";
+import Trending from "./pages/Trending";
+import Dubbed from "./pages/Dubbed";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +27,8 @@ const App = () => (
           <Route path="/search" element={<Search />} />
           <Route path="/episode/:id" element={<Episode />} />
           <Route path="/my-list" element={<MyList />} />
+          <Route path="/trending" element={<Trending />} />
+          <Route path="/dubbed" element={<Dubbed />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

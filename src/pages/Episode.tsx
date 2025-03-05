@@ -246,7 +246,7 @@ const Episode = () => {
               onClick={() => handleInteraction('like')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                 userInteraction === 'like'
-                  ? 'bg-green-600 text-white'
+                  ? 'bg-netflix-red text-white'
                   : 'bg-netflix-dark text-netflix-gray hover:text-white'
               }`}
             >
