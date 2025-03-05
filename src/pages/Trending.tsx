@@ -44,7 +44,6 @@ const Trending = () => {
             title=""
             items={trendingAnime}
             isLoading={isLoading}
-            showTitle={false}
           />
         </div>
       </div>

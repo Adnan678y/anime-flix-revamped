@@ -35,7 +35,6 @@ const Dubbed = () => {
             title=""
             items={dubbedAnime}
             isLoading={isLoading}
-            showTitle={false}
           />
         </div>
       </div>
