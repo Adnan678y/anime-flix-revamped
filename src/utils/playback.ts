@@ -1,4 +1,3 @@
-
 const PLAYBACK_STORAGE_KEY = 'video-playback-positions';
 
 export interface PlaybackPosition {
@@ -8,17 +7,32 @@ export interface PlaybackPosition {
   name?: string;
   img?: string;
   animeName?: string;
+  completed?: boolean;
 }
 
 export interface PlaybackPositions {
   [episodeId: string]: PlaybackPosition;
 }
 
+// Function to get all playback positions with optimized caching
+let cachedPositions: PlaybackPositions | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL = 3000; // Cache valid for 3 seconds
+
 // Function to get all playback positions
 export const getPlaybackPositions = (): PlaybackPositions => {
   try {
+    // Use cached version if available and recent
+    const now = Date.now();
+    if (cachedPositions && (now - cacheTimestamp < CACHE_TTL)) {
+      return cachedPositions;
+    }
+    
+    // Otherwise load from localStorage
     const positionsJSON = localStorage.getItem(PLAYBACK_STORAGE_KEY) || '{}';
-    return JSON.parse(positionsJSON);
+    cachedPositions = JSON.parse(positionsJSON);
+    cacheTimestamp = now;
+    return cachedPositions;
   } catch (error) {
     console.error('Failed to load playback positions:', error);
     return {};
@@ -31,7 +45,7 @@ export const getPlaybackPosition = (episodeId: string): PlaybackPosition | null 
   return positions[episodeId] || null;
 };
 
-// Function to save a playback position
+// Function to save a playback position with efficient updates
 export const savePlaybackPosition = (
   episodeId: string, 
   position: PlaybackPosition
@@ -39,14 +53,29 @@ export const savePlaybackPosition = (
   try {
     const positions = getPlaybackPositions();
     
+    // Calculate if video is completed based on progress
+    const isCompleted = position.totalDuration > 0 && 
+      (position.progress / position.totalDuration) >= 0.95;
+    
     // Update the position for this episode
     positions[episodeId] = {
       ...position,
-      lastWatched: new Date().toISOString()
+      lastWatched: new Date().toISOString(),
+      completed: isCompleted
     };
     
-    // Save back to localStorage
+    // Invalidate cache
+    cachedPositions = positions;
+    cacheTimestamp = Date.now();
+    
+    // Save to localStorage
     localStorage.setItem(PLAYBACK_STORAGE_KEY, JSON.stringify(positions));
+    
+    // Dispatch a storage event to notify other tabs
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: PLAYBACK_STORAGE_KEY,
+      newValue: JSON.stringify(positions)
+    }));
   } catch (error) {
     console.error('Failed to save playback position:', error);
   }
@@ -56,7 +85,6 @@ export const savePlaybackPosition = (
 export const getContinueWatchingItems = (limit: number = 10): Array<PlaybackPosition & { ID: string }> => {
   try {
     const positions = getPlaybackPositions();
-    console.log('Raw playback positions:', positions);
     
     const items = Object.entries(positions)
       .map(([episodeId, data]) => ({
@@ -66,14 +94,17 @@ export const getContinueWatchingItems = (limit: number = 10): Array<PlaybackPosi
       .sort((a, b) => 
         new Date(b.lastWatched).getTime() - new Date(a.lastWatched).getTime()
       )
-      .slice(0, limit)
-      // Relaxed filtering criteria - only filter out completed videos (95%+)
       .filter(item => 
-        item.totalDuration > 0 &&
+        // Only include items with valid duration that aren't marked as completed
+        item.totalDuration > 0 && 
+        !item.completed &&
+        // Ensure there's some actual progress (more than 10 seconds)
+        item.progress > 10 &&
+        // And haven't reached the end (less than 95%)
         (item.progress / item.totalDuration) < 0.95
-      );
+      )
+      .slice(0, limit);
     
-    console.log('Continue watching items after processing:', items);
     return items;
   } catch (error) {
     console.error('Failed to get continue watching items:', error);
@@ -88,9 +119,15 @@ export const updatePlaybackWithMetadata = (
 ): void => {
   const position = getPlaybackPosition(episodeId);
   if (position) {
+    // Only update fields that are provided and not empty
+    const updatedMetadata: Partial<PlaybackPosition> = {};
+    if (metadata.name) updatedMetadata.name = metadata.name;
+    if (metadata.img) updatedMetadata.img = metadata.img;
+    if (metadata.animeName) updatedMetadata.animeName = metadata.animeName;
+    
     savePlaybackPosition(episodeId, {
       ...position,
-      ...metadata
+      ...updatedMetadata
     });
   } else {
     // Create a new playback position if it doesn't exist
@@ -103,7 +140,42 @@ export const updatePlaybackWithMetadata = (
   }
 };
 
-// Helper function to add a test video for development purposes
+// Function to mark an episode as watched/unwatched
+export const markEpisodeAsWatched = (episodeId: string, watched: boolean): void => {
+  const position = getPlaybackPosition(episodeId);
+  if (position) {
+    if (watched) {
+      // Mark as completed by setting progress to 99% of duration
+      savePlaybackPosition(episodeId, {
+        ...position,
+        progress: position.totalDuration * 0.99,
+        completed: true
+      });
+    } else {
+      // Mark as not completed by resetting progress to 0
+      savePlaybackPosition(episodeId, {
+        ...position,
+        progress: 0,
+        completed: false
+      });
+    }
+  }
+};
+
+// Function to clear all watch history
+export const clearWatchHistory = (): void => {
+  localStorage.removeItem(PLAYBACK_STORAGE_KEY);
+  cachedPositions = {};
+  cacheTimestamp = Date.now();
+  
+  // Notify other tabs
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: PLAYBACK_STORAGE_KEY,
+    newValue: '{}'
+  }));
+};
+
+// Function to add a test video for development purposes
 export const addTestVideo = () => {
   savePlaybackPosition('test-episode-1', {
     progress: 300,
@@ -112,5 +184,14 @@ export const addTestVideo = () => {
     name: 'Test Episode 1',
     img: 'https://assets-prd.ignimgs.com/2021/10/14/demonslayer-art-1634244394273.png',
     animeName: 'Test Anime'
+  });
+  
+  savePlaybackPosition('test-episode-2', {
+    progress: 450,
+    totalDuration: 1500,
+    lastWatched: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    name: 'Test Episode 2',
+    img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfvg0u2c4IkVIzhVsJgY0ySPgqa5O5pXwXvhs5RG56Hovth_-ulnvU1Zkn&s=10',
+    animeName: 'Another Test Anime'
   });
 };

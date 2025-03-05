@@ -6,8 +6,10 @@ import { Hero } from '@/components/Hero';
 import { AnimeGrid } from '@/components/AnimeGrid';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Play } from 'lucide-react';
-import { getContinueWatchingItems, updatePlaybackWithMetadata, addTestVideo } from '@/utils/playback';
+import { Play, Trash2 } from 'lucide-react';
+import { getContinueWatchingItems, updatePlaybackWithMetadata, addTestVideo, clearWatchHistory } from '@/utils/playback';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface ContinueWatchingItem {
   ID: string;
@@ -20,6 +22,7 @@ interface ContinueWatchingItem {
 
 const Index = () => {
   const [continueWatching, setContinueWatching] = useState<ContinueWatchingItem[]>([]);
+  const { toast } = useToast();
 
   const { data: homeData, isLoading } = useQuery({
     queryKey: ['home'],
@@ -42,7 +45,7 @@ const Index = () => {
         if (homeData) {
           watchingItems.forEach(item => {
             const episode = homeData?.["New release"]?.items.find(ep => ep.ID === item.ID) ||
-                          homeData?.Popular?.items.find(ep => ep.ID === item.ID);
+                        homeData?.Popular?.items.find(ep => ep.ID === item.ID);
             
             if (episode && (!item.name || !item.img)) {
               // Update the metadata if it's missing
@@ -79,7 +82,15 @@ const Index = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  console.log('Current continue watching state:', continueWatching);
+  const handleClearWatchHistory = () => {
+    clearWatchHistory();
+    setContinueWatching([]);
+    toast({
+      title: "Watch history cleared",
+      description: "Your continue watching list has been cleared.",
+      duration: 3000,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">
@@ -89,7 +100,18 @@ const Index = () => {
         <div className="space-y-12">
           {continueWatching.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-white">Continue Watching</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white">Continue Watching</h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleClearWatchHistory}
+                  className="text-white/70 hover:text-white hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear History
+                </Button>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {continueWatching.map((item) => (
                   <div key={item.ID} className="relative group">
@@ -102,6 +124,7 @@ const Index = () => {
                           src={item.img} 
                           alt={item.name || 'Episode'}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full bg-netflix-dark flex items-center justify-center">
