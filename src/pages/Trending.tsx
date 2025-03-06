@@ -9,26 +9,17 @@ const Trending = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [trendingAnime, setTrendingAnime] = useState<any[]>([]);
 
-  const { data: homeData } = useQuery({
-    queryKey: ['home'],
-    queryFn: api.getHome,
-  });
-
-  const { data: recommendedData } = useQuery({
+  const { data: trendingData } = useQuery({
     queryKey: ['trending-recommendations'],
     queryFn: () => api.getRecommendations('trending'),
-    enabled: !homeData?.Popular?.items,
   });
 
   useEffect(() => {
-    if (homeData?.Popular?.items) {
-      setTrendingAnime(homeData.Popular.items);
-      setIsLoading(false);
-    } else if (recommendedData?.results) {
-      setTrendingAnime(recommendedData.results);
+    if (trendingData?.results) {
+      setTrendingAnime(trendingData.results);
       setIsLoading(false);
     }
-  }, [homeData, recommendedData]);
+  }, [trendingData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">

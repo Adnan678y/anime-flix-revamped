@@ -4,6 +4,8 @@ import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { AnimeGrid } from '@/components/AnimeGrid';
+import { Link } from 'react-router-dom';
+import { Shield } from 'lucide-react';
 
 const Index = () => {
   const { data: homeData, isLoading } = useQuery({
@@ -17,16 +19,25 @@ const Index = () => {
       <Hero />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-12">
-          <AnimeGrid
-            title="Popular Anime"
-            items={homeData?.Popular?.items || []}
-            isLoading={isLoading}
-          />
-          <AnimeGrid
-            title="New Releases"
-            items={homeData?.["New release"]?.items || []}
-            isLoading={isLoading}
-          />
+          {Object.entries(homeData || {}).map(([collectionName, collection]: [string, any]) => (
+            <AnimeGrid
+              key={collectionName}
+              title={collectionName}
+              items={collection?.items || []}
+              isLoading={isLoading}
+            />
+          ))}
+          
+          {/* Admin Panel Link */}
+          <div className="mt-8 flex justify-center">
+            <Link 
+              to="/admin" 
+              className="flex items-center gap-2 px-4 py-2 bg-netflix-dark text-netflix-gray hover:text-white rounded-md transition-colors"
+            >
+              <Shield className="w-5 h-5" />
+              <span>Admin Panel</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
