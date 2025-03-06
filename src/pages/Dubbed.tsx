@@ -9,17 +9,17 @@ const Dubbed = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dubbedAnime, setDubbedAnime] = useState<any[]>([]);
 
-  const { data: dubbedData } = useQuery({
+  const { data: recommendedData } = useQuery({
     queryKey: ['dubbed-recommendations'],
     queryFn: () => api.getRecommendations('dubbed'),
   });
 
   useEffect(() => {
-    if (dubbedData?.results) {
-      setDubbedAnime(dubbedData.results);
+    if (recommendedData?.results) {
+      setDubbedAnime(recommendedData.results);
       setIsLoading(false);
     }
-  }, [dubbedData]);
+  }, [recommendedData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">
