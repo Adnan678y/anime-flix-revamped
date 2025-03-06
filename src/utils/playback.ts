@@ -1,3 +1,4 @@
+
 const PLAYBACK_STORAGE_KEY = 'video-playback-positions';
 
 export interface PlaybackPosition {
@@ -41,6 +42,10 @@ export const getPlaybackPositions = (): PlaybackPositions => {
 
 // Function to get a specific playback position
 export const getPlaybackPosition = (episodeId: string): PlaybackPosition | null => {
+  if (!episodeId) {
+    console.error('Invalid episodeId provided to getPlaybackPosition');
+    return null;
+  }
   const positions = getPlaybackPositions();
   return positions[episodeId] || null;
 };
@@ -51,6 +56,13 @@ export const savePlaybackPosition = (
   position: PlaybackPosition
 ): void => {
   try {
+    if (!episodeId) {
+      console.error('Invalid episodeId provided to savePlaybackPosition');
+      return;
+    }
+
+    console.log(`Saving playback for episode ${episodeId}:`, position);
+    
     const positions = getPlaybackPositions();
     
     // Calculate if video is completed based on progress
@@ -105,6 +117,7 @@ export const getContinueWatchingItems = (limit: number = 10): Array<PlaybackPosi
       )
       .slice(0, limit);
     
+    console.log('Continue watching items:', items);
     return items;
   } catch (error) {
     console.error('Failed to get continue watching items:', error);
@@ -117,6 +130,13 @@ export const updatePlaybackWithMetadata = (
   episodeId: string,
   metadata: { name?: string; img?: string; animeName?: string }
 ): void => {
+  if (!episodeId) {
+    console.error('Invalid episodeId provided to updatePlaybackWithMetadata');
+    return;
+  }
+
+  console.log(`Updating metadata for episode ${episodeId}:`, metadata);
+  
   const position = getPlaybackPosition(episodeId);
   if (position) {
     // Only update fields that are provided and not empty
@@ -142,6 +162,8 @@ export const updatePlaybackWithMetadata = (
 
 // Function to mark an episode as watched/unwatched
 export const markEpisodeAsWatched = (episodeId: string, watched: boolean): void => {
+  if (!episodeId) return;
+  
   const position = getPlaybackPosition(episodeId);
   if (position) {
     if (watched) {

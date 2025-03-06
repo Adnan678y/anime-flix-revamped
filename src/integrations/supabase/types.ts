@@ -9,6 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      anime: {
+        Row: {
+          created_at: string
+          horizontal_img: string | null
+          id: string
+          img: string | null
+          name: string
+          overview: string | null
+          release_year: string | null
+          status: string | null
+          tag: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          horizontal_img?: string | null
+          id?: string
+          img?: string | null
+          name: string
+          overview?: string | null
+          release_year?: string | null
+          status?: string | null
+          tag?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          horizontal_img?: string | null
+          id?: string
+          img?: string | null
+          name?: string
+          overview?: string | null
+          release_year?: string | null
+          status?: string | null
+          tag?: string[] | null
+        }
+        Relationships: []
+      }
+      collection_anime: {
+        Row: {
+          anime_id: string
+          collection_id: string
+        }
+        Insert: {
+          anime_id: string
+          collection_id: string
+        }
+        Update: {
+          anime_id?: string
+          collection_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_anime_anime_id_fkey"
+            columns: ["anime_id"]
+            isOneToOne: false
+            referencedRelation: "anime"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_anime_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       episode_comments: {
         Row: {
           comment_text: string
@@ -32,6 +119,47 @@ export type Database = {
           ip_address?: string
         }
         Relationships: []
+      }
+      episodes: {
+        Row: {
+          anime_id: string
+          created_at: string
+          duration: number | null
+          episode_number: number
+          id: string
+          name: string
+          poster: string | null
+          stream_url: string | null
+        }
+        Insert: {
+          anime_id: string
+          created_at?: string
+          duration?: number | null
+          episode_number: number
+          id?: string
+          name: string
+          poster?: string | null
+          stream_url?: string | null
+        }
+        Update: {
+          anime_id?: string
+          created_at?: string
+          duration?: number | null
+          episode_number?: number
+          id?: string
+          name?: string
+          poster?: string | null
+          stream_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episodes_anime_id_fkey"
+            columns: ["anime_id"]
+            isOneToOne: false
+            referencedRelation: "anime"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       episodes_interactions: {
         Row: {
