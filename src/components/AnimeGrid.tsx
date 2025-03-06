@@ -4,7 +4,7 @@ import { Play, Star } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Anime {
-  id: number;
+  id: number | string;
   name: string;
   img: string;
 }
@@ -13,9 +13,10 @@ interface AnimeGridProps {
   title: string;
   items: Anime[];
   isLoading?: boolean;
+  showRank?: boolean;
 }
 
-export const AnimeGrid = ({ title, items, isLoading }: AnimeGridProps) => {
+export const AnimeGrid = ({ title, items, isLoading, showRank = false }: AnimeGridProps) => {
   const isMobile = useIsMobile();
 
   if (isLoading) {
@@ -46,7 +47,7 @@ export const AnimeGrid = ({ title, items, isLoading }: AnimeGridProps) => {
         {title}
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
-        {items.map((anime) => (
+        {items.map((anime, index) => (
           <Link
             key={anime.id}
             to={`/anime/${anime.id}`}
@@ -67,6 +68,11 @@ export const AnimeGrid = ({ title, items, isLoading }: AnimeGridProps) => {
                 <h3 className="text-white text-sm md:text-lg font-semibold line-clamp-2">{anime.name}</h3>
               </div>
             </div>
+            {showRank && (
+              <div className="absolute top-0 left-0 bg-netflix-red text-white font-bold text-xl md:text-2xl p-2 md:p-3 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
+                {index + 1}
+              </div>
+            )}
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <div className="bg-netflix-red text-white text-xs font-bold px-2 py-1 rounded">
                 NEW

@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
@@ -154,7 +153,6 @@ const Index = () => {
                       <div className="mt-2">
                         <Progress 
                           className="h-1 bg-gray-700" 
-                          indicatorColor="bg-netflix-red" 
                           value={(item.progress / (item.totalDuration || 100)) * 100}
                         />
                         <div className="flex items-center justify-between mt-1 text-xs text-netflix-gray">
