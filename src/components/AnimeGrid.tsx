@@ -4,7 +4,7 @@ import { Play, Star } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Anime {
-  id: number;
+  id: string | number;  // Updated to accept both string and number IDs
   name: string;
   img: string;
 }

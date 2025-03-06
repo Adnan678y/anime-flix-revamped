@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -89,7 +90,7 @@ const AnimeDetails = () => {
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5 text-netflix-red" />
-                  <span>{anime.Release_year}</span>
+                  <span>{anime.release_year}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Users className="w-5 h-5 text-netflix-red" />
@@ -162,11 +163,11 @@ const AnimeDetails = () => {
             </div>
           </div>
 
-          {recommendations?.items && recommendations.items.length > 0 && (
+          {recommendations?.results && recommendations.results.length > 0 && (
             <div className="mt-16">
               <AnimeGrid
                 title="More Like This"
-                items={recommendations.items}
+                items={recommendations.results}
                 isLoading={isLoadingRecommendations}
               />
             </div>
