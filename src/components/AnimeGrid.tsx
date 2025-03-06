@@ -1,12 +1,16 @@
 
 import { Link } from 'react-router-dom';
-import { Play, Star } from 'lucide-react';
+import { Play, Star, Info, Calendar, Clock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Anime {
   id: number | string;
   name: string;
   img: string;
+  status?: string;
+  release_year?: string;
+  duration?: string;
+  rating?: number;
 }
 
 interface AnimeGridProps {
@@ -63,9 +67,34 @@ export const AnimeGrid = ({ title, items, isLoading, showRank = false }: AnimeGr
               <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                 <div className="flex items-center space-x-2 mb-2">
                   <Play className="w-4 h-4 md:w-5 md:h-5 text-netflix-red" />
-                  <Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" fill="currentColor" />
+                  {anime.rating && (
+                    <div className="flex items-center">
+                      <Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" fill="currentColor" />
+                      <span className="text-yellow-400 text-xs md:text-sm font-medium ml-1">{anime.rating}</span>
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-white text-sm md:text-lg font-semibold line-clamp-2">{anime.name}</h3>
+                
+                <div className="flex flex-wrap gap-2 mt-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                  {anime.release_year && (
+                    <div className="flex items-center text-netflix-gray">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      <span>{anime.release_year}</span>
+                    </div>
+                  )}
+                  {anime.duration && (
+                    <div className="flex items-center text-netflix-gray">
+                      <Clock className="w-3 h-3 mr-1" />
+                      <span>{anime.duration}</span>
+                    </div>
+                  )}
+                  {anime.status && (
+                    <div className="bg-netflix-red/20 text-netflix-red px-2 py-0.5 rounded-full text-xs">
+                      {anime.status}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             {showRank && (

@@ -3,13 +3,19 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { Link } from 'react-router-dom';
-import { Play, Star, Clock, Calendar, Users, Info } from 'lucide-react';
+import { Play, Star, Clock, Calendar, Users, Info, Bookmark, ThumbsUp, Share2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AnimeGrid } from '@/components/AnimeGrid';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { isBookmarked, toggleBookmark } from '@/utils/bookmarks';
 
 const AnimeDetails = () => {
   const isMobile = useIsMobile();
   const { id } = useParams<{ id: string }>();
+  const [bookmarked, setBookmarked] = useState(false);
+  const [liked, setLiked] = useState(false);
+  
   const { data: anime, isLoading } = useQuery({
     queryKey: ['anime', id],
     queryFn: () => api.getAnimeById(id!),
@@ -21,6 +27,50 @@ const AnimeDetails = () => {
     queryFn: () => api.getRecommendations(anime?.tag?.[0] || ''),
     enabled: !!anime?.tag?.[0],
   });
+  
+  useEffect(() => {
+    if (id) {
+      setBookmarked(isBookmarked(id));
+      const likedAnimes = JSON.parse(localStorage.getItem('liked-animes') || '{}');
+      setLiked(!!likedAnimes[id]);
+    }
+  }, [id]);
+  
+  const handleBookmark = () => {
+    if (!id) return;
+    const newState = toggleBookmark(id);
+    setBookmarked(newState);
+    toast.success(newState ? 'Added to your list' : 'Removed from your list');
+  };
+  
+  const handleLike = () => {
+    if (!id) return;
+    setLiked(!liked);
+    const likedAnimes = JSON.parse(localStorage.getItem('liked-animes') || '{}');
+    if (liked) {
+      delete likedAnimes[id];
+    } else {
+      likedAnimes[id] = true;
+    }
+    localStorage.setItem('liked-animes', JSON.stringify(likedAnimes));
+    toast.success(liked ? 'Removed from liked animes' : 'Added to liked animes');
+  };
+  
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: anime?.name,
+        text: `Check out ${anime?.name} on Tenjku Anime`,
+        url: window.location.href,
+      }).catch(() => {
+        navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard!');
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard!');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -66,11 +116,36 @@ const AnimeDetails = () => {
         <div className="container mx-auto px-4">
           <div className="relative -mt-48 z-10 grid md:grid-cols-[300px_1fr] gap-8">
             <div className="animate-fade-in">
-              <img
-                src={anime.img}
-                alt={anime.name}
-                className="w-full aspect-[2/3] object-cover rounded-lg shadow-2xl transition-transform duration-300 hover:scale-105"
-              />
+              <div className="relative">
+                <img
+                  src={anime.img}
+                  alt={anime.name}
+                  className="w-full aspect-[2/3] object-cover rounded-lg shadow-2xl transition-transform duration-300 hover:scale-105"
+                />
+                <div className="absolute top-3 right-3 flex flex-col gap-2">
+                  <button
+                    onClick={handleBookmark}
+                    className={`p-2 rounded-full backdrop-blur-md ${bookmarked ? 'bg-netflix-red text-white' : 'bg-black/40 text-white'}`}
+                    title={bookmarked ? "Remove from My List" : "Add to My List"}
+                  >
+                    <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
+                  </button>
+                  <button
+                    onClick={handleLike}
+                    className={`p-2 rounded-full backdrop-blur-md ${liked ? 'bg-netflix-red text-white' : 'bg-black/40 text-white'}`}
+                    title={liked ? "Unlike" : "Like"}
+                  >
+                    <ThumbsUp className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="p-2 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60"
+                    title="Share"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
               <div className="mt-4 flex items-center justify-center space-x-4">
                 <div className="flex items-center space-x-1">
                   <Star className="w-5 h-5 text-yellow-400" fill="currentColor" />
@@ -81,6 +156,14 @@ const AnimeDetails = () => {
                   <span className="text-netflix-gray">24 min/ep</span>
                 </div>
               </div>
+              
+              <Link
+                to={anime.episodes && anime.episodes.length > 0 ? `/episode/${anime.episodes[0].id}` : '#'}
+                className={`mt-6 flex items-center justify-center gap-2 bg-netflix-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md transition-colors w-full ${!anime.episodes || anime.episodes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <Play className="w-5 h-5" fill="currentColor" />
+                <span>Watch Now</span>
+              </Link>
             </div>
 
             <div className="text-white space-y-6 animate-fade-in">
@@ -89,7 +172,7 @@ const AnimeDetails = () => {
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5 text-netflix-red" />
-                  <span>{anime.Release_year}</span>
+                  <span>{anime.release_year}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Users className="w-5 h-5 text-netflix-red" />
@@ -108,6 +191,18 @@ const AnimeDetails = () => {
                   </p>
                 </div>
               </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {anime.tag && anime.tag.map((tag, index) => (
+                  <Link 
+                    key={index} 
+                    to={`/search?tag=${tag}`}
+                    className="bg-netflix-dark hover:bg-netflix-dark/80 text-netflix-gray text-sm px-3 py-1 rounded-full transition-colors"
+                  >
+                    {tag}
+                  </Link>
+                ))}
+              </div>
 
               {anime?.episodes && anime.episodes.length > 0 && (
                 <div className="pt-8">
@@ -119,29 +214,29 @@ const AnimeDetails = () => {
                       <Link
                         key={episode.id}
                         to={`/episode/${episode.id}`}
-                        className="group relative bg-netflix-dark rounded-lg overflow-hidden active:scale-95 transition-all duration-300"
+                        className="group relative bg-netflix-dark rounded-lg overflow-hidden hover:scale-105 active:scale-95 transition-all duration-300"
                       >
                         <div className="aspect-video relative">
                           <img
                             src={episode.poster}
                             alt={episode.name}
-                            className="w-full h-full object-cover transition-transform duration-300 @media(hover: hover){group-hover:scale-110}"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             loading="lazy"
                             onError={(e) => {
                               const img = e.target as HTMLImageElement;
                               img.src = anime.img;
                             }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 @media(hover: hover){group-hover:opacity-100} transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-12 h-12 rounded-full bg-netflix-red/90 flex items-center justify-center transform scale-0 @media(hover: hover){group-hover:scale-100} transition-transform duration-300">
+                              <div className="w-12 h-12 rounded-full bg-netflix-red/90 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
                                 <Play className="w-6 h-6 text-white" fill="currentColor" />
                               </div>
                             </div>
                           </div>
                         </div>
                         <div className="p-4">
-                          <h3 className="text-white font-semibold text-sm md:text-base line-clamp-2 @media(hover: hover){group-hover:text-netflix-red} transition-colors duration-300">
+                          <h3 className="text-white font-semibold text-sm md:text-base line-clamp-2 group-hover:text-netflix-red transition-colors duration-300">
                             {episode.name}
                           </h3>
                           <div className="mt-2 flex items-center space-x-2 text-netflix-gray text-xs md:text-sm">
@@ -149,7 +244,7 @@ const AnimeDetails = () => {
                             <span>24min</span>
                           </div>
                         </div>
-                        <div className="absolute top-2 right-2 opacity-0 @media(hover: hover){group-hover:opacity-100} transition-opacity duration-300">
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <div className="bg-netflix-red text-white text-xs font-bold px-2 py-1 rounded">
                             HD
                           </div>
@@ -162,11 +257,11 @@ const AnimeDetails = () => {
             </div>
           </div>
 
-          {recommendations?.items && recommendations.items.length > 0 && (
+          {recommendations?.results && recommendations.results.length > 0 && (
             <div className="mt-16">
               <AnimeGrid
                 title="More Like This"
-                items={recommendations.items}
+                items={recommendations.results}
                 isLoading={isLoadingRecommendations}
               />
             </div>

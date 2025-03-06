@@ -79,6 +79,7 @@ export const api = {
       const response = await fetch(`${BASE_URL}/query?tag=${encodeURIComponent(tag)}`);
       if (!response.ok) throw new Error('Failed to fetch recommendations');
       const data = await response.json();
+      // Ensure we return data with the items property for compatibility
       return data;
     } catch (error) {
       console.error('API Error (getRecommendations):', error);
