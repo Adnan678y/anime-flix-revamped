@@ -12,6 +12,7 @@ import MyList from "./pages/MyList";
 import NotFound from "./pages/NotFound";
 import Trending from "./pages/Trending";
 import Dubbed from "./pages/Dubbed";
+import LiveTV from "./pages/LiveTV";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/my-list" element={<MyList />} />
           <Route path="/trending" element={<Trending />} />
           <Route path="/dubbed" element={<Dubbed />} />
+          <Route path="/live-tv" element={<LiveTV />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

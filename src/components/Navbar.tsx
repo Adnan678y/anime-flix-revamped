@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Bookmark } from 'lucide-react';
+import { Search, Menu, X, Bookmark, Tv } from 'lucide-react';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,6 +38,10 @@ export const Navbar = () => {
               </Link>
               <Link to="/dubbed" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                 Dubbed
+              </Link>
+              <Link to="/live-tv" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1">
+                <Tv className="w-4 h-4" />
+                Live TV
               </Link>
               <Link 
                 to="/my-list" 
@@ -95,6 +99,14 @@ export const Navbar = () => {
               onClick={() => setIsOpen(false)}
             >
               Dubbed
+            </Link>
+            <Link
+              to="/live-tv"
+              className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center gap-2"
+              onClick={() => setIsOpen(false)}
+            >
+              <Tv className="w-4 h-4" />
+              Live TV
             </Link>
             <Link
               to="/my-list"
