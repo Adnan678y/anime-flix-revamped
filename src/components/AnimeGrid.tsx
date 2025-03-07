@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Play, Star, Info, Calendar, Clock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,9 +17,10 @@ interface AnimeGridProps {
   items: Anime[];
   isLoading?: boolean;
   showRank?: boolean;
+  emptyMessage?: string;
 }
 
-export const AnimeGrid = ({ title, items, isLoading, showRank = false }: AnimeGridProps) => {
+export const AnimeGrid = ({ title, items, isLoading, showRank = false, emptyMessage }: AnimeGridProps) => {
   const isMobile = useIsMobile();
 
   if (isLoading) {
@@ -42,7 +42,11 @@ export const AnimeGrid = ({ title, items, isLoading, showRank = false }: AnimeGr
   }
 
   if (!items?.length) {
-    return null;
+    return emptyMessage ? (
+      <div className="text-center py-8">
+        <p className="text-netflix-gray text-lg">{emptyMessage}</p>
+      </div>
+    ) : null;
   }
 
   return (
