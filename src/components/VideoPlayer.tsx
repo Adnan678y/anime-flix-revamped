@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { Volume2, Volume1, VolumeX, Play, Pause, Settings, Loader2, RotateCcw, RotateCw, Maximize2, Minimize2, ChevronRight, ArrowLeft, Forward, Rewind } from 'lucide-react';
@@ -42,6 +43,22 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster, autoPlay = true 
   const [playbackPercent, setPlaybackPercent] = useState(0);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [savedPosition, setSavedPosition] = useState<number | null>(null);
+
+  // Add the missing handleResumeChoice function
+  const handleResumeChoice = (shouldResume: boolean) => {
+    setShowResumePrompt(false);
+    
+    if (videoRef.current) {
+      if (shouldResume && savedPosition !== null) {
+        videoRef.current.currentTime = savedPosition;
+      }
+      
+      videoRef.current.play().catch(error => {
+        console.error('Failed to play video:', error);
+      });
+      setIsPlaying(true);
+    }
+  };
 
   const saveCurrentPlaybackPosition = () => {
     if (!src || !videoRef.current) return;
