@@ -18,5 +18,45 @@ export const channels: Channel[] = [
     url: "https://qp-pldt-live-grp-07-prod.akamaized.net/out/u/cg_animax_sd.mpd",
     category: "Animation",
     description: "Animax is an anime television channel that began broadcasting in Japan on June 1, 1998, and is owned by Sony Pictures Entertainment Japan Inc."
+  },
+  {
+    id: "37",
+    name: "Anime All Day",
+    logo: "https://i.imgur.com/bYZtd0G.png",
+    url: "http://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv/stitch/hls/channel/5812b7d3249444e05d09cc49/master.m3u8",
+    category: "Animation",
+    description: "24/7 anime programming featuring a variety of popular anime series and movies."
+  },
+  {
+    id: "38",
+    name: "Naruto",
+    logo: "https://i.imgur.com/M8X3Kvc.png",
+    url: "http://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv/stitch/hls/channel/5da0c85bd2c9c10009370984/master.m3u8",
+    category: "Animation",
+    description: "Dedicated channel featuring episodes from the popular anime series Naruto."
+  },
+  {
+    id: "39",
+    name: "One Piece",
+    logo: "https://i.imgur.com/XsvbAWR.png",
+    url: "http://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv/stitch/hls/channel/5f7790b3ed0c88000720b241/master.m3u8",
+    category: "Animation",
+    description: "24/7 channel dedicated to the adventures of Monkey D. Luffy and his pirate crew in the popular anime One Piece."
+  },
+  {
+    id: "40",
+    name: "CONtv Anime",
+    logo: "https://i.imgur.com/49LrRwJ.png",
+    url: "https://contvanime-roku-ingest.cinedigm.com/master.m3u8",
+    category: "Animation",
+    description: "A dedicated anime channel featuring a variety of series from different genres and eras."
+  },
+  {
+    id: "41",
+    name: "RetroCrush",
+    logo: "https://i.imgur.com/M40b4YI.png",
+    url: "https://amg01201-cinedigmenterta-retrocrush-cineverse-nrfll.amagi.tv/playlist/amg01201-cinedigmenterta-retrocrush-cineverse/playlist.m3u8",
+    category: "Animation",
+    description: "Classic anime from the 70s, 80s, and 90s, offering a nostalgic collection of retro anime titles."
   }
 ];
