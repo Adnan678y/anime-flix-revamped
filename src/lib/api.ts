@@ -73,10 +73,30 @@ export const api = {
   },
 
   searchAnime: async (query: string) => {
+    if (!query || query.trim() === '') {
+      return { items: [] };
+    }
+    
     try {
-      const response = await fetch(`${BASE_URL}/query?name=${encodeURIComponent(query)}`);
-      if (!response.ok) throw new Error(`Failed to search anime: ${response.status}`);
-      const data = await response.json();
+      const response = await fetch(`${BASE_URL}/query?name=${encodeURIComponent(query.trim())}`);
+      
+      // Add timeout for search requests
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Search request timed out')), 15000)
+      );
+      
+      const responsePromise = response.json();
+      const data = await Promise.race([responsePromise, timeoutPromise]) as any;
+      
+      if (!response.ok) {
+        throw new Error(`Failed to search anime: ${response.status}`);
+      }
+      
+      // If we got an empty array, return a standardized format
+      if (!data.items || data.items.length === 0) {
+        console.log('No search results found for:', query);
+      }
+      
       return data;
     } catch (error) {
       console.error('API Error (searchAnime):', error);
