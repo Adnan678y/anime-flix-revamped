@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
@@ -5,12 +6,13 @@ import { Hero } from '@/components/Hero';
 import { AnimeGrid } from '@/components/AnimeGrid';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Trash2, Clock, CheckCircle } from 'lucide-react';
+import { Play, Trash2, Clock, CheckCircle, Tv } from 'lucide-react';
 import { getContinueWatchingItems, addTestVideo, clearWatchHistory } from '@/utils/playback';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { channels } from '@/data/channels';
 
 interface ContinueWatchingItem {
   ID: string;
@@ -98,6 +100,58 @@ const Index = () => {
       <Hero />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-12">
+          {/* Live TV Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Tv className="w-5 h-5 text-netflix-red" />
+                <h2 className="text-2xl font-bold text-white">Live TV</h2>
+              </div>
+              <Link 
+                to="/live-tv" 
+                className="text-netflix-red hover:text-white transition-colors text-sm font-medium"
+              >
+                View All
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {channels.map((channel) => (
+                <Link
+                  key={channel.id}
+                  to="/live-tv"
+                  className="group bg-netflix-dark rounded-lg overflow-hidden border border-netflix-dark/50 hover:border-netflix-red/50 transition-all hover:shadow-lg hover:shadow-netflix-red/10"
+                >
+                  <div className="aspect-video bg-netflix-dark/30 relative">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <img 
+                        src={channel.logo} 
+                        alt={channel.name}
+                        className="max-w-[70%] max-h-[70%] object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="bg-netflix-red/80 p-2 rounded-full">
+                        <Play className="w-8 h-8 text-white" fill="white" />
+                      </div>
+                    </div>
+                    {channel.category && (
+                      <div className="absolute top-2 right-2 bg-netflix-red/90 px-2 py-1 rounded text-xs text-white font-medium">
+                        {channel.category}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h3 className="text-white font-medium">{channel.name}</h3>
+                    <p className="text-netflix-gray text-sm mt-1">Live</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
           {continueWatching.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">

@@ -118,6 +118,23 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
     }
   };
 
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    
+    if (volume === 0) {
+      // If currently muted, restore to previous volume or default to 1
+      const newVolume = videoRef.current.dataset.previousVolume ? 
+        parseFloat(videoRef.current.dataset.previousVolume) : 1;
+      setVolume(newVolume);
+      videoRef.current.volume = newVolume;
+    } else {
+      // If not muted, save current volume and then mute
+      videoRef.current.dataset.previousVolume = volume.toString();
+      setVolume(0);
+      videoRef.current.volume = 0;
+    }
+  };
+
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
 
@@ -182,7 +199,7 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
           <div className="flex items-center gap-4 ml-auto">
             <div className="flex items-center gap-2 group/volume">
               <button 
-                onClick={() => setVolume(volume === 0 ? 1 : 0)}
+                onClick={toggleMute}
                 className="text-white hover:text-[#ea384c] transition-colors"
               >
                 {volume === 0 ? (
