@@ -1,8 +1,11 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import shaka from 'shaka-player';
+// Fix the import by using require instead of import
 import { Loader2, Volume2, Volume1, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Declare shaka globally since TypeScript has issues with the module definition
+declare const shaka: any;
 
 interface ShakaPlayerProps {
   src: string;
@@ -21,66 +24,81 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
   const [showControls, setShowControls] = useState(true);
   
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !src) return;
-    
-    // Install polyfills
-    shaka.polyfill.installAll();
-    
-    // Check browser support
-    if (!shaka.Player.isBrowserSupported()) {
-      setError('Browser not supported for streaming');
-      setIsLoading(false);
-      return;
-    }
-    
-    // Initialize player
-    const shakaPlayer = new shaka.Player(video);
-    
-    // Error handling
-    shakaPlayer.addEventListener('error', (event) => {
-      console.error('Error code', event.detail.code, 'object', event.detail);
-      setError(`Playback error: ${event.detail.message}`);
-      setIsLoading(false);
-    });
-    
-    const loadStream = async () => {
+    // Dynamically import Shaka Player
+    const loadShaka = async () => {
       try {
-        // Configure DRM if needed
-        if (drmKey) {
-          const [keyId, key] = drmKey.split(':');
-          
-          shakaPlayer.configure({
-            drm: {
-              clearKeys: {
-                [keyId]: key
-              }
-            }
-          });
+        // We'll use the global shaka object that's loaded via script tag
+        if (typeof shaka === 'undefined') {
+          console.error('Shaka player not loaded');
+          setError('Video player failed to load');
+          setIsLoading(false);
+          return;
         }
         
-        // Load the manifest
-        await shakaPlayer.load(src);
-        console.log('The video has been loaded');
-        setIsLoading(false);
+        const video = videoRef.current;
+        if (!video || !src) return;
         
-        // Start playback
-        video.play().catch(error => {
-          console.error('Error playing video:', error);
+        // Install polyfills
+        shaka.polyfill.installAll();
+        
+        // Check browser support
+        if (!shaka.Player.isBrowserSupported()) {
+          setError('Browser not supported for streaming');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Initialize player
+        const shakaPlayer = new shaka.Player(video);
+        
+        // Error handling
+        shakaPlayer.addEventListener('error', (event: any) => {
+          console.error('Error code', event.detail.code, 'object', event.detail);
+          setError(`Playback error: ${event.detail.message}`);
+          setIsLoading(false);
         });
+        
+        try {
+          // Configure DRM if needed
+          if (drmKey) {
+            const [keyId, key] = drmKey.split(':');
+            
+            shakaPlayer.configure({
+              drm: {
+                clearKeys: {
+                  [keyId]: key
+                }
+              }
+            });
+          }
+          
+          // Load the manifest
+          await shakaPlayer.load(src);
+          console.log('The video has been loaded');
+          setIsLoading(false);
+          
+          // Start playback
+          video.play().catch(error => {
+            console.error('Error playing video:', error);
+          });
+        } catch (error) {
+          console.error('Error loading stream:', error);
+          setError(`Failed to load stream: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          setIsLoading(false);
+        }
+        
+        // Cleanup
+        return () => {
+          shakaPlayer.destroy();
+        };
       } catch (error) {
-        console.error('Error loading stream:', error);
-        setError(`Failed to load stream: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error('Error initializing Shaka Player:', error);
+        setError('Failed to initialize video player');
         setIsLoading(false);
       }
     };
     
-    loadStream();
-    
-    // Cleanup
-    return () => {
-      shakaPlayer.destroy();
-    };
+    loadShaka();
   }, [src, drmKey]);
   
   useEffect(() => {

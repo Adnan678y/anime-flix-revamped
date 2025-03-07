@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { channels, Channel } from '@/data/channels';
 import ShakaPlayer from '@/components/ShakaPlayer';
@@ -9,7 +9,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const LiveTV = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(channels[0] || null);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const { toast } = useToast();
+
+  // Load Shaka Player script if not loaded
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.document.getElementById('shaka-player-script')) {
+      const script = document.createElement('script');
+      script.id = 'shaka-player-script';
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js';
+      script.async = true;
+      script.onload = () => {
+        console.log('Shaka Player script loaded');
+        setIsScriptLoaded(true);
+      };
+      script.onerror = () => {
+        console.error('Failed to load Shaka Player script');
+      };
+      document.body.appendChild(script);
+    } else {
+      setIsScriptLoaded(true);
+    }
+  }, []);
 
   const handleChannelSelect = (channel: Channel) => {
     setSelectedChannel(channel);
@@ -33,7 +54,7 @@ const LiveTV = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
           {/* Main video player */}
           <div className="order-2 lg:order-1">
-            {selectedChannel ? (
+            {selectedChannel && isScriptLoaded ? (
               <div className="bg-netflix-dark rounded-lg overflow-hidden shadow-xl">
                 <ShakaPlayer 
                   src={selectedChannel.url}
@@ -58,7 +79,9 @@ const LiveTV = () => {
               </div>
             ) : (
               <div className="aspect-video bg-netflix-dark/50 rounded-lg flex items-center justify-center">
-                <p className="text-netflix-gray">Select a channel to start watching</p>
+                <p className="text-netflix-gray">
+                  {!isScriptLoaded ? "Loading player..." : "Select a channel to start watching"}
+                </p>
               </div>
             )}
           </div>
