@@ -1,8 +1,9 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
-import { ArrowLeft, Play, Bookmark, ThumbsUp, ThumbsDown, Share2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Play, Bookmark, ThumbsUp, ThumbsDown, Share2, MessageSquare, HomeIcon, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +11,7 @@ import { getBookmarks, toggleBookmark, isBookmarked } from '@/utils/bookmarks';
 import { EpisodeGrid } from '@/components/EpisodeGrid';
 import VideoPlayer from '@/components/VideoPlayer';
 import { updatePlaybackWithMetadata } from '@/utils/playback';
+import { Button } from '@/components/ui/button';
 
 const Episode = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +24,7 @@ const Episode = () => {
   const DEFAULT_ANIME_NAME = "Attack on Titan";
   const DEFAULT_THUMBNAIL = "https://cdn.myanimelist.net/images/anime/10/47347.jpg";
 
-  const { data: episode, isLoading: isLoadingEpisode } = useQuery({
+  const { data: episode, isLoading: isLoadingEpisode, error: episodeError } = useQuery({
     queryKey: ['episode', id],
     queryFn: () => api.getEpisode(id!),
     enabled: !!id,
@@ -184,20 +186,70 @@ const Episode = () => {
     );
   }
 
-  if (!episode) {
+  if (!episode || episodeError) {
     return (
-      <div className="min-h-screen bg-netflix-black">
+      <div className="min-h-screen bg-gradient-to-b from-[#1A1A2E] to-[#16213E]">
         <Navbar />
-        <div className="container mx-auto px-4 py-32 text-center">
-          <h1 className="text-2xl text-white">Episode not found</h1>
-          <div className="mt-8">
-            <div className="aspect-video max-w-3xl mx-auto bg-netflix-dark rounded-lg overflow-hidden">
-              <VideoPlayer 
-                src="" 
-                poster={DEFAULT_THUMBNAIL}
-              />
+        <div className="container mx-auto px-4 py-12 md:py-24">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative mb-12 text-center">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#E50914]/20 to-[#ff8080]/20 blur-xl rounded-full" />
+              <h1 className="relative text-4xl md:text-6xl font-bold bg-gradient-to-r from-[#E50914] via-[#ff6b6b] to-[#ff8080] text-transparent bg-clip-text animate-pulse">
+                Episode Not Found
+              </h1>
             </div>
-            <h2 className="text-xl mt-4 text-white">{DEFAULT_ANIME_NAME}</h2>
+            
+            <div className="text-center mb-12">
+              <p className="text-xl text-white/80 mb-4">
+                Oops! The episode you're looking for seems to have disappeared into the anime void.
+              </p>
+              <p className="text-lg text-white/60">
+                It might have been removed, or perhaps the URL is incorrect.
+              </p>
+            </div>
+            
+            <div className="aspect-video max-w-3xl mx-auto bg-netflix-dark/30 backdrop-blur-lg rounded-xl overflow-hidden border border-white/10 shadow-xl">
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center space-y-6">
+                  <Play className="w-20 h-20 text-white/20 mx-auto" />
+                  <p className="text-white/60 text-xl">Video not available</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6 transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#E50914]/10">
+                <ArrowLeft className="w-10 h-10 text-[#E50914] mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2 text-center">Go Back</h3>
+                <p className="text-white/70 mb-4 text-center">Return to the previous page you were viewing.</p>
+                <Button 
+                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  onClick={() => window.history.back()}
+                >
+                  Go Back
+                </Button>
+              </div>
+              
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6 transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#E50914]/10">
+                <HomeIcon className="w-10 h-10 text-[#E50914] mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2 text-center">Home Page</h3>
+                <p className="text-white/70 mb-4 text-center">Return to the home page to discover other content.</p>
+                <Link to="/">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-[#E50914] to-[#ff4d4d] hover:opacity-90 text-white"
+                  >
+                    Go Home
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div className="mt-12 text-center">
+              <Link to="/search" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+                <Search className="w-4 h-4" />
+                <span>Search for another anime</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -230,6 +282,7 @@ const Episode = () => {
               <VideoPlayer 
                 src={episode.stream} 
                 poster={episode.poster || DEFAULT_THUMBNAIL}
+                autoPlay={true}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">

@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Navbar } from '@/components/Navbar';
 import { Link } from 'react-router-dom';
-import { Play, Star, Clock, Calendar, Users, Info, Bookmark, ThumbsUp, Share2 } from 'lucide-react';
+import { Play, Star, Clock, Calendar, Users, Info, Bookmark, ThumbsUp, Share2, HomeIcon, Search, ArrowLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AnimeGrid } from '@/components/AnimeGrid';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { isBookmarked, toggleBookmark } from '@/utils/bookmarks';
+import { Button } from '@/components/ui/button';
 
 const AnimeDetails = () => {
   const isMobile = useIsMobile();
@@ -93,10 +94,54 @@ const AnimeDetails = () => {
 
   if (!anime) {
     return (
-      <div className="min-h-screen bg-netflix-black">
+      <div className="min-h-screen bg-gradient-to-b from-[#1A1A2E] to-[#16213E]">
         <Navbar />
-        <div className="container mx-auto px-4 py-32 text-center">
-          <h1 className="text-2xl text-white">Anime not found</h1>
+        <div className="container mx-auto px-4 py-12 md:py-24">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#E50914]/20 to-[#ff8080]/20 blur-xl rounded-full" />
+              <h1 className="relative text-4xl md:text-6xl font-bold bg-gradient-to-r from-[#E50914] via-[#ff6b6b] to-[#ff8080] text-transparent bg-clip-text animate-pulse">
+                Anime Not Found
+              </h1>
+            </div>
+            
+            <p className="text-xl text-white/80 mb-8">
+              The anime you're looking for seems to have teleported to another dimension...
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto mb-12">
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6 transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#E50914]/10">
+                <Search className="w-10 h-10 text-[#E50914] mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Find Something Else</h3>
+                <p className="text-white/70 mb-4">Discover other exciting anime titles in our collection.</p>
+                <Link to="/search">
+                  <Button 
+                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  >
+                    Search Catalog
+                  </Button>
+                </Link>
+              </div>
+              
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6 transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#E50914]/10">
+                <HomeIcon className="w-10 h-10 text-[#E50914] mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Back to Home</h3>
+                <p className="text-white/70 mb-4">Return to the home page to browse trending and popular anime.</p>
+                <Link to="/">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-[#E50914] to-[#ff4d4d] hover:opacity-90 text-white"
+                  >
+                    Go Home
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              <span>Return to homepage</span>
+            </Link>
+          </div>
         </div>
       </div>
     );

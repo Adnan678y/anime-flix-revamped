@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { Volume2, Volume1, VolumeX, Play, Pause, Settings, Loader2, RotateCcw, RotateCw, Maximize2, Minimize2, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Volume2, Volume1, VolumeX, Play, Pause, Settings, Loader2, RotateCcw, RotateCw, Maximize2, Minimize2, ChevronRight, ArrowLeft, Forward, Rewind } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from "@/integrations/supabase/client";
@@ -9,13 +9,12 @@ import { getPlaybackPosition, savePlaybackPosition } from '@/utils/playback';
 interface VideoPlayerProps {
   src?: string;
   poster?: string;
+  autoPlay?: boolean;
 }
 
 type SettingsMenuType = 'main' | 'playback' | 'quality';
 
-const PLAYBACK_STORAGE_KEY = 'video-playback-positions';
-
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster, autoPlay = true }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -39,6 +38,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const doubleTapTimeoutRef = useRef<number>();
   const [showDoubleTapIndicator, setShowDoubleTapIndicator] = useState<'left' | 'right' | null>(null);
   const savePlaybackPositionTimeout = useRef<number>();
+  const [autoPlayComplete, setAutoPlayComplete] = useState(false);
+  const [playbackPercent, setPlaybackPercent] = useState(0);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [savedPosition, setSavedPosition] = useState<number | null>(null);
 
   const saveCurrentPlaybackPosition = () => {
     if (!src || !videoRef.current) return;
@@ -58,6 +61,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   };
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      if (isPlaying && videoRef.current) {
+        saveCurrentPlaybackPosition();
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, src]);
+
+  useEffect(() => {
     if (!src) return;
     
     const loadSavedPosition = () => {
@@ -65,10 +78,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
         const episodeId = src.match(/episode\/(.+)$/)?.[1] || '';
         if (!episodeId || !videoRef.current) return;
 
-        const savedPosition = getPlaybackPosition(episodeId);
-        if (savedPosition) {
-          videoRef.current.currentTime = savedPosition.progress;
-          setCurrentTime(savedPosition.progress);
+        const position = getPlaybackPosition(episodeId);
+        if (position && position.progress > 10) {
+          const percentWatched = (position.progress / position.totalDuration) * 100;
+          
+          if (percentWatched > 95) {
+            return;
+          }
+          
+          setSavedPosition(position.progress);
+          setShowResumePrompt(true);
         }
       } catch (error) {
         console.error('Failed to load progress:', error);
@@ -109,6 +128,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
         }));
         setQualities(availableQualities);
         setLoading(false);
+        
+        if (autoPlay && !showResumePrompt) {
+          video.play().catch(error => {
+            console.error('Failed to play video:', error);
+          });
+          setIsPlaying(true);
+        }
       });
 
       hls.on(Hls.Events.ERROR, (_, data) => {
@@ -130,6 +156,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
       video.src = src;
       video.addEventListener('loadedmetadata', () => {
         setLoading(false);
+        
+        if (autoPlay && !showResumePrompt) {
+          video.play().catch(error => {
+            console.error('Failed to play video:', error);
+          });
+          setIsPlaying(true);
+        }
       });
       video.addEventListener('waiting', handleWaiting);
       video.addEventListener('playing', handlePlaying);
@@ -142,7 +175,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
       setError('HLS is not supported in your browser');
       setLoading(false);
     }
-  }, [src]);
+  }, [src, autoPlay, showResumePrompt]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -152,14 +185,31 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
       setCurrentTime(video.currentTime);
       setDuration(video.duration);
       
+      const percent = (video.currentTime / video.duration) * 100;
+      setPlaybackPercent(percent);
+      
       if (savePlaybackPositionTimeout.current) {
         window.clearTimeout(savePlaybackPositionTimeout.current);
       }
       savePlaybackPositionTimeout.current = window.setTimeout(saveCurrentPlaybackPosition, 1000);
+      
+      if (percent > 90 && !autoPlayComplete) {
+        setAutoPlayComplete(true);
+      }
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      saveCurrentPlaybackPosition();
     };
 
     video.addEventListener('timeupdate', handleTimeUpdate);
-    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleEnded);
+    
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
+    };
   }, []);
 
   useEffect(() => {
@@ -327,7 +377,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
                 <span>Quality</span>
                 <div className="flex items-center gap-2">
                   <span className="text-white/60">
-                    {qualities[currentQuality]?.height}p
+                    {qualities[currentQuality]?.height || "Auto"}p
                   </span>
                   <ChevronRight className="w-4 h-4" />
                 </div>
@@ -379,6 +429,23 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
               <span>Quality</span>
             </button>
             <div className="space-y-1">
+              <button
+                onClick={() => {
+                  handleQualityChange(-1);
+                  setCurrentMenu('main');
+                }}
+                className={cn(
+                  "flex items-center justify-between w-full px-3 py-2.5 text-sm rounded-md transition-all",
+                  currentQuality === -1 
+                    ? "bg-[#ea384c] text-white" 
+                    : "text-white/80 hover:bg-white/10"
+                )}
+              >
+                <span>Auto</span>
+                {currentQuality === -1 && (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </button>
               {qualities.map(({ height, level }) => (
                 <button
                   key={level}
@@ -464,7 +531,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   if (error) {
     return (
       <div className="w-full h-[60vh] flex items-center justify-center bg-black text-white">
-        <p className="text-red-500">{error}</p>
+        <div className="text-center space-y-4">
+          <p className="text-red-500 text-xl">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-netflix-red text-white rounded-md hover:bg-netflix-red/90 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -486,6 +561,31 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
       }}
       onTouchEnd={handleTouchEnd}
     >
+      {showResumePrompt && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50 backdrop-blur-sm">
+          <div className="bg-[#1A1F2C] p-6 rounded-lg max-w-md text-center space-y-6 shadow-xl">
+            <h3 className="text-2xl font-bold text-white">Resume Watching?</h3>
+            <p className="text-white/80">
+              You were at {savedPosition && formatTime(savedPosition)} ({((savedPosition || 0) / duration * 100).toFixed(0)}% complete)
+            </p>
+            <div className="flex space-x-4 justify-center">
+              <button
+                onClick={() => handleResumeChoice(false)}
+                className="px-5 py-2.5 bg-[#403E43] text-white rounded-md hover:bg-[#4c4a50] transition-colors"
+              >
+                Start Over
+              </button>
+              <button
+                onClick={() => handleResumeChoice(true)}
+                className="px-5 py-2.5 bg-netflix-red text-white rounded-md hover:bg-netflix-red/90 transition-colors"
+              >
+                Resume
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    
       {(loading || isBuffering) && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20 backdrop-blur-sm transition-all duration-300">
           <div className="flex flex-col items-center gap-4">
