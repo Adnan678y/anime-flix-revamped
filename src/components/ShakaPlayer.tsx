@@ -33,6 +33,14 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
     };
   }, []);
   
+  // Helper function to bypass CORS for HLS streams
+  const getProxiedUrl = (originalUrl: string) => {
+    if (originalUrl.includes('.m3u8') && !originalUrl.includes('corsproxy.io')) {
+      return `https://corsproxy.io/?${encodeURIComponent(originalUrl)}`;
+    }
+    return originalUrl;
+  };
+  
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
@@ -59,18 +67,26 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
             const hls = new Hls({
               xhrSetup: (xhr) => {
                 xhr.withCredentials = false; // Try without credentials for CORS
-              }
+              },
+              // Enable auto quality selection
+              autoLevelEnabled: true,
+              startLevel: -1, // -1 means auto
+              capLevelToPlayerSize: true
             });
             hlsInstanceRef.current = hls;
             
             hls.attachMedia(video);
             
             hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-              hls.loadSource(src);
+              // Use the proxied URL for HLS streams
+              const proxiedUrl = getProxiedUrl(src);
+              console.log("Loading HLS stream with proxied URL:", proxiedUrl);
+              hls.loadSource(proxiedUrl);
             });
             
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
               setIsLoading(false);
+              console.log("HLS manifest parsed. Available quality levels:", hls.levels);
               video.play().catch(playError => {
                 console.warn('Auto-play failed:', playError);
                 // We'll still consider this successful, user can click play
@@ -81,18 +97,32 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
               if (data.fatal) {
                 console.error('HLS stream error:', data);
                 if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                  setError(`Network error: The stream at ${src.split('/').pop()} is unavailable or blocked by CORS policy.`);
+                  setError(`Network error: The stream is unavailable or blocked. Trying with proxy.`);
+                  
+                  // If we already tried with the proxy and it's still failing
+                  if (src.includes('corsproxy.io')) {
+                    setError(`Error loading stream: ${data.details}`);
+                    setIsLoading(false);
+                    hls.destroy();
+                  } else {
+                    // Try once more with the proxy if we haven't yet
+                    const proxiedUrl = getProxiedUrl(src);
+                    console.log("Retrying with proxied URL:", proxiedUrl);
+                    hls.loadSource(proxiedUrl);
+                  }
                 } else {
                   setError(`Error loading stream: ${data.details}`);
+                  setIsLoading(false);
+                  hls.destroy();
                 }
-                setIsLoading(false);
-                hls.destroy();
               }
             });
           } 
           // For Safari which has native HLS support
           else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = src;
+            // Still use proxied URL for Safari
+            const proxiedUrl = getProxiedUrl(src);
+            video.src = proxiedUrl;
             video.addEventListener('loadedmetadata', () => {
               setIsLoading(false);
               video.play().catch(console.error);
@@ -129,6 +159,15 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
           
           // Initialize player
           const shakaPlayer = new shaka.Player(video);
+          
+          // Configure for auto quality selection (ABR)
+          shakaPlayer.configure({
+            abr: {
+              enabled: true,
+              defaultBandwidthEstimate: 500000, // Initial bandwidth estimate in bits/sec
+              switchInterval: 1, // How often ABR can switch streams (in seconds)
+            }
+          });
           
           // Error handling
           shakaPlayer.addEventListener('error', (event: any) => {
