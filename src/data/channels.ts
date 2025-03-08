@@ -18,37 +18,5 @@ export const channels: Channel[] = [
     url: "https://qp-pldt-live-grp-07-prod.akamaized.net/out/u/cg_animax_sd.mpd",
     category: "Animation",
     description: "Animax is an anime television channel that began broadcasting in Japan on June 1, 1998, and is owned by Sony Pictures Entertainment Japan Inc."
-  },
-  {
-    id: "37",
-    name: "Anime All Day",
-    logo: "https://i.imgur.com/bYZtd0G.png",
-    url: "https://i.mjh.nz/PlutoTV/5812b7d3249444e05d09cc49-alt.m3u8",
-    category: "Animation",
-    description: "24/7 anime programming featuring a variety of popular anime series and movies."
-  },
-  {
-    id: "38",
-    name: "Naruto",
-    logo: "https://i.imgur.com/M8X3Kvc.png",
-    url: "https://i.mjh.nz/PlutoTV/5da0c85bd2c9c10009370984-alt.m3u8",
-    category: "Animation",
-    description: "Dedicated channel featuring episodes from the popular anime series Naruto."
-  },
-  {
-    id: "39",
-    name: "One Piece",
-    logo: "https://i.imgur.com/XsvbAWR.png",
-    url: "https://i.mjh.nz/PlutoTV/5f7790b3ed0c88000720b241-alt.m3u8",
-    category: "Animation",
-    description: "24/7 channel dedicated to the adventures of Monkey D. Luffy and his pirate crew in the popular anime One Piece."
-  },
-  {
-    id: "42",
-    name: "Magic Kids",
-    logo: "https://i.imgur.com/CMImqQY.png",
-    url: "https://magicstream.ddns.net/magicstream/stream.m3u8",
-    category: "Animation",
-    description: "Classic children's animation channel featuring nostalgic cartoon programming from the 90s and early 2000s."
   }
 ];
