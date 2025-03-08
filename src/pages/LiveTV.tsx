@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { channels, Channel } from '@/data/channels';
 import ShakaPlayer from '@/components/ShakaPlayer';
-import { Tv, Info } from 'lucide-react';
+import { Tv, Info, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -40,6 +40,16 @@ const LiveTV = () => {
       duration: 2000,
     });
   };
+
+  // Filter out channels with known issues based on console logs
+  const workingChannels = channels.filter(channel => {
+    // Replace with a better detection mechanism if needed
+    const isHlsStream = channel.url.includes('.m3u8');
+    const isPlutoTvStream = channel.url.includes('pluto.tv');
+    
+    // We want to return true for channels that should be shown
+    return !(isHlsStream && isPlutoTvStream);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-netflix-black to-netflix-dark">
@@ -93,6 +103,15 @@ const LiveTV = () => {
                 <Info className="w-4 h-4 text-netflix-red" />
                 Available Channels
               </h3>
+              
+              {channels.length !== workingChannels.length && (
+                <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-yellow-400">
+                    Some channels are temporarily unavailable due to streaming restrictions.
+                  </p>
+                </div>
+              )}
               
               <div className="grid grid-cols-1 gap-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {channels.length > 0 ? (

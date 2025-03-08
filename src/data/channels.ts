@@ -23,7 +23,7 @@ export const channels: Channel[] = [
     id: "37",
     name: "Anime All Day",
     logo: "https://i.imgur.com/bYZtd0G.png",
-    url: "http://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv/stitch/hls/channel/5812b7d3249444e05d09cc49/master.m3u8",
+    url: "https://i.mjh.nz/PlutoTV/5812b7d3249444e05d09cc49-alt.m3u8",
     category: "Animation",
     description: "24/7 anime programming featuring a variety of popular anime series and movies."
   },
@@ -31,7 +31,7 @@ export const channels: Channel[] = [
     id: "38",
     name: "Naruto",
     logo: "https://i.imgur.com/M8X3Kvc.png",
-    url: "http://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv/stitch/hls/channel/5da0c85bd2c9c10009370984/master.m3u8",
+    url: "https://i.mjh.nz/PlutoTV/5da0c85bd2c9c10009370984-alt.m3u8",
     category: "Animation",
     description: "Dedicated channel featuring episodes from the popular anime series Naruto."
   },
@@ -39,7 +39,7 @@ export const channels: Channel[] = [
     id: "39",
     name: "One Piece",
     logo: "https://i.imgur.com/XsvbAWR.png",
-    url: "http://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv/stitch/hls/channel/5f7790b3ed0c88000720b241/master.m3u8",
+    url: "https://i.mjh.nz/PlutoTV/5f7790b3ed0c88000720b241-alt.m3u8",
     category: "Animation",
     description: "24/7 channel dedicated to the adventures of Monkey D. Luffy and his pirate crew in the popular anime One Piece."
   },
