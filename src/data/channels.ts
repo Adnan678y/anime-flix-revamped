@@ -44,19 +44,11 @@ export const channels: Channel[] = [
     description: "24/7 channel dedicated to the adventures of Monkey D. Luffy and his pirate crew in the popular anime One Piece."
   },
   {
-    id: "40",
-    name: "CONtv Anime",
-    logo: "https://i.imgur.com/49LrRwJ.png",
-    url: "https://contvanime-roku-ingest.cinedigm.com/master.m3u8",
+    id: "42",
+    name: "Magic Kids",
+    logo: "https://i.imgur.com/CMImqQY.png",
+    url: "https://magicstream.ddns.net/magicstream/stream.m3u8",
     category: "Animation",
-    description: "A dedicated anime channel featuring a variety of series from different genres and eras."
-  },
-  {
-    id: "41",
-    name: "RetroCrush",
-    logo: "https://i.imgur.com/M40b4YI.png",
-    url: "https://amg01201-cinedigmenterta-retrocrush-cineverse-nrfll.amagi.tv/playlist/amg01201-cinedigmenterta-retrocrush-cineverse/playlist.m3u8",
-    category: "Animation",
-    description: "Classic anime from the 70s, 80s, and 90s, offering a nostalgic collection of retro anime titles."
+    description: "Classic children's animation channel featuring nostalgic cartoon programming from the 90s and early 2000s."
   }
 ];
