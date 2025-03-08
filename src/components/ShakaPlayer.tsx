@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader2, Volume2, Volume1, VolumeX, Maximize2, Minimize2, Settings, ChevronRight } from 'lucide-react';
+import { Loader2, Volume2, Volume1, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Hls from 'hls.js';
 
@@ -23,21 +23,6 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const hlsInstanceRef = useRef<Hls | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [qualities, setQualities] = useState<{ height: number; level: number }[]>([]);
-  const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 means auto
-  
-  // Bypass CORS by using a proxy for certain streams
-  const getProxiedUrl = (url: string): string => {
-    // Check if it's a Pluto TV stream
-    if (url.includes('pluto.tv') && url.includes('.m3u8')) {
-      // Replace direct Pluto TV URLs with a working alternative
-      // Or use a proxy if available
-      const streamPath = url.split('/').slice(-2).join('/');
-      return `https://i.mjh.nz/PlutoTV/${streamPath}`;
-    }
-    return url;
-  };
   
   useEffect(() => {
     // Cleanup function to handle component unmounting
@@ -62,9 +47,8 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
     setIsLoading(true);
     setError(null);
     
-    const proxiedSrc = getProxiedUrl(src);
-    const isHlsStream = proxiedSrc.includes('.m3u8');
-    const isMpdStream = proxiedSrc.includes('.mpd');
+    const isHlsStream = src.includes('.m3u8');
+    const isMpdStream = src.includes('.mpd');
     
     const loadContent = async () => {
       try {
@@ -75,28 +59,17 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
             const hls = new Hls({
               xhrSetup: (xhr) => {
                 xhr.withCredentials = false; // Try without credentials for CORS
-              },
-              autoStartLoad: true,
-              startLevel: -1, // Auto quality by default
-              capLevelToPlayerSize: true, // Adjust quality based on player size
-              debug: false
+              }
             });
             hlsInstanceRef.current = hls;
             
             hls.attachMedia(video);
             
             hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-              hls.loadSource(proxiedSrc);
+              hls.loadSource(src);
             });
             
-            hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
-              // Extract available qualities
-              const availableQualities = data.levels.map((level: any, index: number) => ({
-                height: level.height,
-                level: index,
-              }));
-              setQualities(availableQualities);
-              
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
               setIsLoading(false);
               video.play().catch(playError => {
                 console.warn('Auto-play failed:', playError);
@@ -105,10 +78,10 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
             });
             
             hls.on(Hls.Events.ERROR, (_, data) => {
-              console.error('HLS error:', data);
               if (data.fatal) {
+                console.error('HLS stream error:', data);
                 if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                  setError(`Network error: The stream at ${proxiedSrc.split('/').pop()} is unavailable or blocked by CORS policy.`);
+                  setError(`Network error: The stream at ${src.split('/').pop()} is unavailable or blocked by CORS policy.`);
                 } else {
                   setError(`Error loading stream: ${data.details}`);
                 }
@@ -116,15 +89,10 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
                 hls.destroy();
               }
             });
-            
-            // Add level switching event to update current quality state
-            hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
-              setCurrentQuality(data.level);
-            });
           } 
           // For Safari which has native HLS support
           else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = proxiedSrc;
+            video.src = src;
             video.addEventListener('loadedmetadata', () => {
               setIsLoading(false);
               video.play().catch(console.error);
@@ -183,29 +151,10 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
               });
             }
             
-            // Configure auto quality selection
-            shakaPlayer.configure({
-              abr: {
-                enabled: true,
-                defaultBandwidthEstimate: 1000000 // 1Mbps initial estimate
-              }
-            });
-            
             // Load the manifest
-            await shakaPlayer.load(proxiedSrc);
+            await shakaPlayer.load(src);
             console.log('The video has been loaded');
             setIsLoading(false);
-            
-            // Get available video tracks for quality selection
-            const tracks = shakaPlayer.getVariantTracks();
-            const videoQualities = tracks
-              .filter((track: any) => track.type === 'variant' && track.height)
-              .map((track: any, index: number) => ({
-                height: track.height,
-                level: index
-              }));
-            
-            setQualities(videoQualities);
             
             // Start playback
             video.play().catch(error => {
@@ -219,7 +168,7 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
         }
         // Regular video playback for other formats
         else {
-          video.src = proxiedSrc;
+          video.src = src;
           video.addEventListener('loadeddata', () => {
             setIsLoading(false);
             video.play().catch(console.error);
@@ -289,15 +238,6 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
       await containerRef.current.requestFullscreen();
     } else {
       await document.exitFullscreen();
-    }
-  };
-  
-  const handleQualityChange = (level: number) => {
-    if (hlsInstanceRef.current) {
-      console.log(`Switching to quality level: ${level}`);
-      hlsInstanceRef.current.currentLevel = level;
-      setCurrentQuality(level);
-      setShowSettings(false);
     }
   };
 
@@ -376,60 +316,6 @@ const ShakaPlayer: React.FC<ShakaPlayerProps> = ({ src, drmKey, poster, title })
                 className="w-24 h-1.5 accent-[#ea384c] bg-[#403E43] rounded-full appearance-none cursor-pointer"
               />
             </div>
-            
-            {/* Quality selector */}
-            {qualities.length > 0 && (
-              <div className="relative">
-                <button 
-                  onClick={() => setShowSettings(!showSettings)}
-                  className={cn(
-                    "text-white transition-colors p-1 rounded-full",
-                    showSettings ? "bg-[#ea384c] text-white hover:bg-[#ea384c]/90" : "hover:text-[#ea384c]"
-                  )}
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
-                
-                {showSettings && (
-                  <div className="absolute right-0 bottom-full mb-2 bg-[#1A1F2C]/95 rounded-lg backdrop-blur-sm border border-white/10 animate-fade-in z-30 w-[180px]">
-                    <div className="p-3 space-y-1">
-                      <h4 className="text-white text-sm font-medium mb-2">Quality</h4>
-                      <button
-                        onClick={() => handleQualityChange(-1)}
-                        className={cn(
-                          "flex items-center justify-between w-full px-3 py-2 text-sm rounded-md transition-all",
-                          currentQuality === -1 
-                            ? "bg-[#ea384c] text-white" 
-                            : "text-white/80 hover:bg-white/10"
-                        )}
-                      >
-                        <span>Auto</span>
-                        {currentQuality === -1 && (
-                          <ChevronRight className="w-4 h-4" />
-                        )}
-                      </button>
-                      {qualities.map(({ height, level }) => (
-                        <button
-                          key={level}
-                          onClick={() => handleQualityChange(level)}
-                          className={cn(
-                            "flex items-center justify-between w-full px-3 py-2 text-sm rounded-md transition-all",
-                            currentQuality === level 
-                              ? "bg-[#ea384c] text-white" 
-                              : "text-white/80 hover:bg-white/10"
-                          )}
-                        >
-                          <span>{height}p</span>
-                          {currentQuality === level && (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
             
             <button
               onClick={toggleFullscreen}
