@@ -21,9 +21,9 @@ export const channels: Channel[] = [
   } , 
     {
      id: "37",
-     name: "Anime All Day",
+     name: "Anime All Da y",
      logo: "https://i.imgur.com/bYZtd0G.png",
-     url: "https://testing.api74.workers.dev/animax?key=Adnankevu83grv9oebr",
+     url: "https://testing.api74.workers.dev/BS11/index.m3u8",
      category: "Animation",
      description: "24/7 anime programming featuring a variety of popular anime series and movies."
    }
