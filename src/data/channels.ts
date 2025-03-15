@@ -23,7 +23,7 @@ export const channels: Channel[] = [
      id: "37",
      name: "Anime All Day",
      logo: "https://i.imgur.com/bYZtd0G.png",
-     url: "https://stitcher-ipv4.pluto.tv/v1/stitch/embed/hls/channel/5812b7d3249444e05d09cc49/3063648/playlist.m3u8?terminate=false&sid=SAMSUNG-TVPLUS-cc81e636-ba53-4e1a-925d-309fc469a392&deviceDNT=0&deviceLat=0&deviceLon=0&deviceModel=samsung&deviceVersion=unknown&embedPartner=samsung-tvplus&samsung_app_domain=https%3A%2F%2Fwww.samsung.com%2Fus%2Fappstore%2Fapp.do%3FappId%3DG15147002586&samsung_app_name=Samsung%20TV%20Plus&serverSideAds=true&appName=samsungtvplus&deviceId=c050263b-325d-4f55-84ff-0e4c08ab01f2&appVersion=unknown&deviceType=samsung-tvplus&deviceMake=samsung&includeDeviceUA=true&us_privacy=1YNY",
+     url: "https://testing.api74.workers.dev/animax?key=Adnankevu83grv9oebr",
      category: "Animation",
      description: "24/7 anime programming featuring a variety of popular anime series and movies."
    }
